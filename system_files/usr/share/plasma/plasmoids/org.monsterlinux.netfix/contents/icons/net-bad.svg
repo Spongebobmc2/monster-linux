@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <radialGradient id="badcap" cx="0.4" cy="0.32" r="0.7"><stop offset="0" stop-color="#2b1a16"/><stop offset="1" stop-color="#120a08"/></radialGradient>
+  </defs>
+  <circle cx="32" cy="34" r="29" fill="#0a0e07"/>
+  <circle cx="32" cy="32" r="29" fill="#1a100c" stroke="#ff5a4a" stroke-width="2.5"/>
+  <circle cx="32" cy="31" r="21" fill="url(#badcap)"/>
+  <path d="M23,22 L41,40 M41,22 L23,40" stroke="#ff4a3a" stroke-width="6" stroke-linecap="round"/>
+</svg>

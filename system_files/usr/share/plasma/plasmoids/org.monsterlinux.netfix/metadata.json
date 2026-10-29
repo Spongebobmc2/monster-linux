@@ -1,0 +1,16 @@
+{
+  "KPackageStructure": "Plasma/Applet",
+  "KPlugin": {
+    "Id": "org.monsterlinux.netfix",
+    "Name": "Monster Network Fix",
+    "Description": "Green check when you're online, red X when you're not. Click to fix the network automatically.",
+    "Icon": "network-wired",
+    "Category": "System Information",
+    "Authors": [{ "Name": "Spongebobmc2" }],
+    "License": "GPL-2.0-or-later",
+    "Version": "1.0"
+  },
+  "X-Plasma-API-Minimum-Version": "6.0",
+  "X-Plasma-NotificationArea": "true",
+  "X-Plasma-NotificationAreaCategory": "SystemServices"
+}

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Service
+X-KDE-ServiceTypes=SystemSettingsExternalApp
+Name=Monster Themes Studio
+Comment=Themes, colors, letters, wallpaper, see-through windows, icons and motion in one place
+Icon=monster-themes-studio
+Exec=plasmawindowed org.monsterlinux.themesstudio
+X-KDE-System-Settings-Parent-Category=appearance
+X-KDE-Weight=1
+X-KDE-Keywords=theme,themes,color,colors,font,fonts,text,wallpaper,icons,cursor,animation,appearance,style

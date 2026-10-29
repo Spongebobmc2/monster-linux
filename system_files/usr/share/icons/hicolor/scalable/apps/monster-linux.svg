@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <radialGradient id="b" cx="0.38" cy="0.3" r="0.8">
+      <stop offset="0" stop-color="#c8f04a"/>
+      <stop offset="0.6" stop-color="#8cc22a"/>
+      <stop offset="1" stop-color="#5d8f1a"/>
+    </radialGradient>
+  </defs>
+  <path d="M8,56 C7,40 10,22 20,13 C24,9.5 28,8 32,8 C36,8 40,9.5 44,13 C54,22 57,40 56,56
+           Q52,59 48,56 Q44,60 40,56 Q36,60 32,56 Q28,60 24,56 Q20,60 16,56 Q12,59 8,56Z"
+        fill="url(#b)" stroke="#0e140a" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M16,24 C18,19 22,15.5 26,14" stroke="#f3ffd2" stroke-opacity=".6" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <circle cx="32" cy="28" r="11.5" fill="#f3ffd2" stroke="#0e140a" stroke-width="2.5"/>
+  <circle cx="33.5" cy="29.5" r="6.5" fill="#6f9c1f"/>
+  <circle cx="34" cy="30" r="3.4" fill="#0e140a"/>
+  <circle cx="36" cy="26.5" r="1.6" fill="#fff"/>
+  <path d="M24,44 Q32,50 40,44" stroke="#0e140a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M27,45.6 l1.4,3.6 l1.6,-3Z M35,46.4 l1.6,3 l1.4,-3.6Z" fill="#f3ffd2" stroke="#0e140a" stroke-width=".8" stroke-linejoin="round"/>
+</svg>

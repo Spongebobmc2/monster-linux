@@ -1,0 +1,18 @@
+{
+  "KPackageStructure": "Plasma/LookAndFeel",
+  "KPlugin": {
+    "Id": "org.monsterlinux.gloop",
+    "Name": "Monster Gloop",
+    "Description": "The Monster Linux theme: a friendly swamp slime, dark moss greens and a lime glow.",
+    "Authors": [
+      {
+        "Name": "Spongebobmc2"
+      }
+    ],
+    "Category": "",
+    "License": "CC-BY-SA-4.0",
+    "Version": "1.0",
+    "Website": "https://github.com/Spongebobmc2/monster-linux"
+  },
+  "X-Plasma-APIVersion": "2"
+}

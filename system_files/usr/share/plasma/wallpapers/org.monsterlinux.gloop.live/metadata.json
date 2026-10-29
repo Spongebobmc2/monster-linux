@@ -1,0 +1,17 @@
+{
+  "KPackageStructure": "Plasma/Wallpaper",
+  "KPlugin": {
+    "Id": "org.monsterlinux.gloop.live",
+    "Name": "Monster Gloop Live",
+    "Description": "Gloop's eye looks around, blinks and winks.",
+    "Icon": "monster-linux",
+    "Authors": [
+      {
+        "Name": "Spongebobmc2"
+      }
+    ],
+    "License": "CC-BY-SA-4.0",
+    "Version": "1.0"
+  },
+  "X-Plasma-API-Minimum-Version": "6.0"
+}

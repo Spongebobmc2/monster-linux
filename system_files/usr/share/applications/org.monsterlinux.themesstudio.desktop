@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Monster Themes Studio
+GenericName=Appearance & Style
+Comment=Themes, colors, letters, wallpaper, see-through windows, icons and motion in one place
+Icon=monster-themes-studio
+Exec=plasmawindowed org.monsterlinux.themesstudio
+Keywords=theme;themes;color;colors;colours;font;fonts;text;wallpaper;background;icons;cursor;animation;appearance;style;look;dark;light;
+Categories=Qt;KDE;Settings;DesktopSettings;

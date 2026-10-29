@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <radialGradient id="ldcap" cx="0.4" cy="0.32" r="0.7">
+      <stop offset="0" stop-color="#ff8a7a"/><stop offset="0.45" stop-color="#e5352a"/><stop offset="1" stop-color="#9c1510"/>
+    </radialGradient>
+    <linearGradient id="ldring" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a4630"/><stop offset="1" stop-color="#11170c"/>
+    </linearGradient>
+  </defs>
+  <circle cx="32" cy="34" r="29" fill="#0a0e07"/>
+  <circle cx="32" cy="32" r="29" fill="url(#ldring)" stroke="#a8e03a" stroke-opacity=".55" stroke-width="2"/>
+  <circle cx="32" cy="34" r="21" fill="#5e0c08"/>
+  <circle cx="32" cy="30" r="21" fill="url(#ldcap)"/>
+  <ellipse cx="25" cy="21" rx="9" ry="5" fill="#fff" opacity=".45" transform="rotate(-25 25 21)"/>
+</svg>

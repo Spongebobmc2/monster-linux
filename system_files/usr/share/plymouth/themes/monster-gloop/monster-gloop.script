@@ -1,0 +1,39 @@
+# Monster Gloop Plymouth script
+Window.SetBackgroundTopColor(0.055, 0.078, 0.039);
+Window.SetBackgroundBottomColor(0.020, 0.031, 0.012);
+
+open_img  = Image("gloop.png");
+blink_img = Image("gloop-blink.png");
+logo = Sprite(open_img);
+logo.SetX(Window.GetX() + Window.GetWidth()  / 2 - open_img.GetWidth()  / 2);
+logo.SetY(Window.GetY() + Window.GetHeight() / 2 - open_img.GetHeight() / 2 - 40);
+
+title = Sprite(Image.Text("MONSTER LINUX", 0.867, 0.902, 0.812));
+title.SetX(Window.GetX() + Window.GetWidth() / 2 - title.GetImage().GetWidth() / 2);
+title.SetY(logo.GetY() + open_img.GetHeight() + 30);
+
+frame = 0;
+fun refresh_callback () {
+    frame++;
+    if ((frame % 160) < 6) logo.SetImage(blink_img);
+    else logo.SetImage(open_img);
+}
+Plymouth.SetRefreshFunction(refresh_callback);
+
+# Disk-encryption password prompt
+prompt = Sprite();
+bullets = Sprite();
+fun display_password_callback (text, count) {
+    prompt.SetImage(Image.Text(text, 0.867, 0.902, 0.812));
+    prompt.SetX(Window.GetX() + Window.GetWidth() / 2 - prompt.GetImage().GetWidth() / 2);
+    prompt.SetY(title.GetY() + 50);
+    stars = "";
+    for (i = 0; i < count; i++) stars += "*";
+    bullets.SetImage(Image.Text(stars, 0.659, 0.878, 0.227));
+    bullets.SetX(Window.GetX() + Window.GetWidth() / 2 - bullets.GetImage().GetWidth() / 2);
+    bullets.SetY(prompt.GetY() + 30);
+    prompt.SetOpacity(1); bullets.SetOpacity(1);
+}
+fun display_normal_callback () { prompt.SetOpacity(0); bullets.SetOpacity(0); }
+Plymouth.SetDisplayPasswordFunction(display_password_callback);
+Plymouth.SetDisplayNormalFunction(display_normal_callback);

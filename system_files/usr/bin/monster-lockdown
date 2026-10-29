@@ -1,0 +1,85 @@
+#!/bin/bash
+# Monster Lockdown: cut every connection at once, and put them all back.
+#
+#   monster-lockdown on       lock down: firewall panic mode, networking off, Bluetooth off,
+#                             file sharing and remote login stopped
+#   monster-lockdown off      unlock and reconnect everything that was on before,
+#                             including the VPN (NordVPN's kill switch blocks the internet until it's back)
+#   monster-lockdown status   prints "locked" or "unlocked" (no root needed)
+#
+# The tray button runs "on" and "off" through pkexec. A polkit rule lets admin
+# (wheel) users do that without typing a password.
+
+set -u
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+RUN=/run/monster-lockdown
+SAVE=/var/lib/monster-lockdown
+STATE="$RUN/state"
+RESTORE="$SAVE/restore"
+SERVICES="smb nmb sshd"
+
+status() { cat "$STATE" 2>/dev/null || echo unlocked; }
+
+# Run a command as the person who pressed the button (pkexec tells us who), not as root
+as_user() {
+    local uid="${PKEXEC_UID:-${SUDO_UID:-}}"
+    if [ -n "$uid" ] && [ "$uid" != 0 ]; then runuser -u "$(id -nu "$uid")" -- "$@"; else "$@"; fi
+}
+vpn_connected() { command -v nordvpn >/dev/null && as_user nordvpn status 2>/dev/null | grep -qi "status: connected"; }
+vpn_killswitch() { command -v nordvpn >/dev/null && as_user nordvpn settings 2>/dev/null | grep -qi "kill switch: enabled"; }
+wait_for_link() {
+    for _ in $(seq 1 "$1"); do
+        nmcli -t -f STATE general 2>/dev/null | grep -qx connected && return 0
+        sleep 1
+    done
+    return 1
+}
+
+if [ "${1:-status}" = status ]; then status; exit 0; fi
+[ "$(id -u)" = 0 ] || { echo "monster-lockdown: $1 needs root (use pkexec)" >&2; exit 1; }
+mkdir -p "$RUN" "$SAVE"
+
+case "$1" in
+  on)
+    [ "$(status)" = locked ] && exit 0
+    # Remember what was on so unlocking can put it back
+    : > "$RESTORE"
+    nmcli networking 2>/dev/null | grep -q enabled && echo networking >> "$RESTORE"
+    nmcli radio wifi 2>/dev/null | grep -q enabled && echo wifi >> "$RESTORE"
+    rfkill list bluetooth 2>/dev/null | grep -q "Soft blocked: no" && echo bluetooth >> "$RESTORE"
+    for s in $SERVICES; do systemctl is-active --quiet "$s" && echo "svc:$s" >> "$RESTORE"; done
+    vpn_connected && echo nordvpn >> "$RESTORE"
+
+    firewall-cmd --panic-on >/dev/null 2>&1          # drop every packet in and out
+    nmcli networking off >/dev/null 2>&1             # Wi-Fi and Ethernet off (VPN drops too)
+    rfkill block bluetooth >/dev/null 2>&1           # Bluetooth off
+    for s in $SERVICES; do systemctl stop "$s" >/dev/null 2>&1; done   # file sharing + remote login
+
+    echo locked > "$STATE"; chmod 644 "$STATE"
+    logger -t monster-lockdown "LOCKED: network, Bluetooth and sharing cut off"
+    echo locked
+    ;;
+  off)
+    firewall-cmd --panic-off >/dev/null 2>&1
+    nmcli networking on >/dev/null 2>&1
+    grep -qx wifi "$RESTORE" 2>/dev/null && nmcli radio wifi on >/dev/null 2>&1
+    grep -qx bluetooth "$RESTORE" 2>/dev/null && rfkill unblock bluetooth >/dev/null 2>&1
+    grep '^svc:' "$RESTORE" 2>/dev/null | cut -d: -f2 | while read -r s; do systemctl start "$s" >/dev/null 2>&1; done
+    echo unlocked > "$STATE"; chmod 644 "$STATE"
+
+    # Wait for Wi-Fi/Ethernet, then bring the VPN back. With NordVPN's kill switch on,
+    # nothing gets through until the VPN reconnects.
+    wait_for_link 25
+    if grep -qx nordvpn "$RESTORE" 2>/dev/null || { command -v nordvpn >/dev/null && vpn_killswitch && ! vpn_connected; }; then
+        for _ in 1 2 3; do
+            as_user nordvpn connect >/dev/null 2>&1 && break
+            sleep 3
+        done
+        vpn_connected && logger -t monster-lockdown "NordVPN reconnected"
+    fi
+    logger -t monster-lockdown "UNLOCKED: connections restored"
+    echo unlocked
+    ;;
+  *)
+    echo "usage: monster-lockdown on|off|status" >&2; exit 2 ;;
+esac

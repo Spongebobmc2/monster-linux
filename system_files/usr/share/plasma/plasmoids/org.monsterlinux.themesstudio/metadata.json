@@ -1,0 +1,14 @@
+{
+  "KPackageStructure": "Plasma/Applet",
+  "KPlugin": {
+    "Id": "org.monsterlinux.themesstudio",
+    "Name": "Monster Themes Studio",
+    "Description": "Design how Monster Linux looks: themes, colors, letters, wallpaper, glass, icons and motion.",
+    "Icon": "preferences-desktop-theme-global",
+    "Category": "Utilities",
+    "Authors": [{ "Name": "Spongebobmc2" }],
+    "License": "GPL-2.0-or-later",
+    "Version": "1.0"
+  },
+  "X-Plasma-API-Minimum-Version": "6.0"
+}

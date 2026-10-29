@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=Monster Gloop
+Description=Monster Linux boot splash: Gloop blinks while the system starts.
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/monster-gloop
+ScriptFile=/usr/share/plymouth/themes/monster-gloop/monster-gloop.script

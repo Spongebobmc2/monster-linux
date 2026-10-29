@@ -1,0 +1,14 @@
+// Monster Linux buttons: let admin users press the Lockdown and Network Fix buttons
+// without a password prompt. Only these two helpers, only from the active desktop session.
+// (On Bazzite /usr/local is really /var/usrlocal, so both paths are listed.)
+polkit.addRule(function(action, subject) {
+    var p = action.lookup("program");
+    var allowed = [
+        "/usr/bin/monster-lockdown", "/usr/local/bin/monster-lockdown", "/var/usrlocal/bin/monster-lockdown",
+        "/usr/bin/monster-netfix",   "/usr/local/bin/monster-netfix",   "/var/usrlocal/bin/monster-netfix"
+    ];
+    if (action.id == "org.freedesktop.policykit.exec" && allowed.indexOf(p) >= 0 &&
+        subject.local && subject.active && subject.isInGroup("wheel")) {
+        return polkit.Result.YES;
+    }
+});

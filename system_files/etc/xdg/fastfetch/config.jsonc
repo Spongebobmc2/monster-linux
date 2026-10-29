@@ -1,0 +1,39 @@
+{
+  "logo": {
+    "type": "file",
+    "source": "/usr/share/monster-linux/fastfetch-logo.txt",
+    "color": {
+      "1": "38;2;168;224;58",
+      "2": "38;2;243;255;210",
+      "3": "38;2;230;255;107",
+      "4": "38;2;74;98;44"
+    },
+    "padding": {
+      "right": 3
+    }
+  },
+  "display": {
+    "color": {
+      "keys": "38;2;168;224;58",
+      "title": "38;2;221;230;207"
+    },
+    "separator": "  "
+  },
+  "modules": [
+    "title",
+    "separator",
+    "os",
+    "kernel",
+    "uptime",
+    "packages",
+    "de",
+    "wm",
+    "terminal",
+    "cpu",
+    "gpu",
+    "memory",
+    "disk",
+    "break",
+    "colors"
+  ]
+}

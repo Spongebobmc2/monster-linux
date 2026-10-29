@@ -31,6 +31,7 @@ systemctl enable podman.socket
    jq '.transports.docker["ghcr.io/spongebobmc2"] = [{"type":"sigstoreSigned","keyPath":"/etc/pki/containers/spongebobmc2.pub","signedIdentity":{"type":"matchRepository"}}]' /etc/containers/policy.json > /tmp/policy.json
    mv /tmp/policy.json /etc/containers/policy.json
 
+
 #### Monster Gloop: complete system theme
 # system_files/ (copied to / earlier in this script) installs the theme files.
 # These lines make Monster Gloop the default for every user.
@@ -67,10 +68,25 @@ done
 for d in /usr/share/kservices6 /usr/share/systemsettings/externalmodules; do
   mkdir -p "$d" && cp /usr/share/monster-linux/monster-themes-studio-settings.desktop "$d/"
 done
-# Hide KDE's own appearance pages (users can bring them back in the Studio under More)
-for m in kcm_wallpaper kcm_colors kcm_lookandfeel kcm_desktoptheme kcm_kwindecoration kcm_icons kcm_cursortheme kcm_splashscreen kcm_sddm kcm_style kcm_fonts kcm_fontinst kcm_animations; do
-  kwriteconfig6 --file /etc/xdg/kdeglobals --group "KDE Control Module Restrictions" --key "$m" false
-done
+# Hide KDE's own appearance pages (users can bring them back in the Studio under More).
+# Written as plain text: kwriteconfig6 failed here in the build (exit code 2).
+cat >> /etc/xdg/kdeglobals <<'EOF'
+
+[KDE Control Module Restrictions]
+kcm_wallpaper=false
+kcm_colors=false
+kcm_lookandfeel=false
+kcm_desktoptheme=false
+kcm_kwindecoration=false
+kcm_icons=false
+kcm_cursortheme=false
+kcm_splashscreen=false
+kcm_sddm=false
+kcm_style=false
+kcm_fonts=false
+kcm_fontinst=false
+kcm_animations=false
+EOF
 gtk-update-icon-cache -f /usr/share/icons/hicolor || true
 
 #### Monster Linux name (boot menu entries and About This System)
@@ -79,17 +95,24 @@ sed -i -e 's/^NAME=.*/NAME="Monster Linux"/' \
        -e 's/^PRETTY_NAME=.*/PRETTY_NAME="Monster Linux (built on Bazzite)"/' /usr/lib/os-release
 
 #### Monster Gloop boot splash (Gloop blinks while the PC starts)
-# If this step fails, the build turns red and your PC keeps its current version.
-plymouth-set-default-theme monster-gloop
-KVER=$(ls /usr/lib/modules | sort -V | tail -n1)
-dracut --no-hostonly --kver "$KVER" --reproducible --add ostree -f "/usr/lib/modules/$KVER/initramfs.img"
+# If this part has a problem, the build still finishes and the PC keeps the Bazzite splash.
+if command -v plymouth-set-default-theme >/dev/null && [ -f /usr/share/plymouth/themes/monster-gloop/monster-gloop.plymouth ]; then
+  if plymouth-set-default-theme monster-gloop; then
+    KVER=$(ls /usr/lib/modules | sort -V | tail -n1)
+    dracut --no-hostonly --kver "$KVER" --reproducible --add ostree -f "/usr/lib/modules/$KVER/initramfs.img" \
+      || echo "WARNING: initramfs rebuild failed; boot splash unchanged"
+  fi
+else
+  echo "WARNING: Plymouth splash not set (tool or theme missing)"
+fi
 
 #### Login screen (Bazzite uses Plasma Login Manager, which reads /etc/plasmalogin.conf)
 kwriteconfig6 --file /etc/plasmalogin.conf --group Greeter --group Wallpaper --group org.kde.image --group General \
-  --key Image "file:///usr/share/wallpapers/MonsterGloop/contents/images/3840x2160.png"
+  --key Image "file:///usr/share/wallpapers/MonsterGloop/contents/images/3840x2160.png" \
+  || echo "WARNING: login screen wallpaper not set"
 
 #### NordVPN built in (repo file comes from system_files/etc/yum.repos.d/nordvpn.repo)
 if [ -f /etc/yum.repos.d/nordvpn.repo ]; then
-  dnf5 install -y nordvpn nordvpn-gui
-  systemctl enable nordvpnd.service
+  dnf5 install -y nordvpn nordvpn-gui || echo "WARNING: NordVPN not installed in the image"
+  systemctl enable nordvpnd.service || true
 fi

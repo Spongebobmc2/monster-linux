@@ -27,6 +27,23 @@ as_user() {
 }
 vpn_connected() { command -v nordvpn >/dev/null && as_user nordvpn status 2>/dev/null | grep -qi "status: connected"; }
 vpn_killswitch() { command -v nordvpn >/dev/null && as_user nordvpn settings 2>/dev/null | grep -qi "kill switch: enabled"; }
+# Turn Bluetooth back on for real. Intel Wi-Fi/Bluetooth chips can answer "Busy" right after
+# being unblocked, so check it actually powered on, and reset the chip if it's stuck.
+bt_powered() { bluetoothctl show 2>/dev/null | grep -q "Powered: yes"; }
+bt_on() {
+    for _ in 1 2 3; do
+        sleep 2
+        bluetoothctl power on >/dev/null 2>&1
+        bt_powered && return 0
+    done
+    systemctl restart bluetooth >/dev/null 2>&1; sleep 3
+    bluetoothctl power on >/dev/null 2>&1; bt_powered && return 0
+    modprobe -r btusb >/dev/null 2>&1; sleep 2; modprobe btusb >/dev/null 2>&1; sleep 4
+    bluetoothctl power on >/dev/null 2>&1
+    bt_powered && { logger -t monster-lockdown "Bluetooth needed a chip reset"; return 0; }
+    logger -t monster-lockdown "Bluetooth didn't come back on; a full shut down may be needed"
+    return 1
+}
 wait_for_link() {
     for _ in $(seq 1 "$1"); do
         nmcli -t -f STATE general 2>/dev/null | grep -qx connected && return 0
@@ -63,7 +80,10 @@ case "$1" in
     firewall-cmd --panic-off >/dev/null 2>&1
     nmcli networking on >/dev/null 2>&1
     grep -qx wifi "$RESTORE" 2>/dev/null && nmcli radio wifi on >/dev/null 2>&1
-    grep -qx bluetooth "$RESTORE" 2>/dev/null && rfkill unblock bluetooth >/dev/null 2>&1
+    if grep -qx bluetooth "$RESTORE" 2>/dev/null; then
+        rfkill unblock bluetooth >/dev/null 2>&1
+        bt_on
+    fi
     grep '^svc:' "$RESTORE" 2>/dev/null | cut -d: -f2 | while read -r s; do systemctl start "$s" >/dev/null 2>&1; done
     echo unlocked > "$STATE"; chmod 644 "$STATE"
 

@@ -30,4 +30,18 @@ systemctl enable podman.socket
    #### Monster Linux: trust images signed with our key
    jq '.transports.docker["ghcr.io/spongebobmc2"] = [{"type":"sigstoreSigned","keyPath":"/etc/pki/containers/spongebobmc2.pub","signedIdentity":{"type":"matchRepository"}}]' /etc/containers/policy.json > /tmp/policy.json
    mv /tmp/policy.json /etc/containers/policy.json
-build_snippet.sh
+#### Monster Gloop theme
+mkdir -p /etc/xdg
+cat > /etc/xdg/plasmarc <<'EOF'
+[Theme]
+name=breeze-dark
+EOF
+
+# Login screen background
+if [ -d /usr/share/sddm/themes/breeze ]; then
+cat > /usr/share/sddm/themes/breeze/theme.conf.user <<'EOF'
+[General]
+background=/usr/share/wallpapers/MonsterGloop/contents/images/3840x2160.png
+type=image
+EOF
+fi

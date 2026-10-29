@@ -1,0 +1,3 @@
+   docker:
+     ghcr.io/spongebobmc2:
+       use-sigstore-attachments: true

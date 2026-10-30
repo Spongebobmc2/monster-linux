@@ -1,0 +1,14 @@
+#!/bin/bash
+# Monster Linux: let the PC's users run NordVPN.
+# The nordvpn package puts its group in /usr/lib/group, but adding a user to a
+# group needs it in /etc/group. Copy it there, then add every admin (wheel) user.
+set -u
+if ! grep -q '^nordvpn:' /etc/group; then
+  line=$(grep '^nordvpn:' /usr/lib/group 2>/dev/null)
+  if [ -n "$line" ]; then echo "$line" >> /etc/group; else groupadd -r nordvpn; fi
+fi
+members=$(grep '^wheel:' /etc/group | cut -d: -f4 | tr ',' ' ')
+for u in $members; do
+  id -nG "$u" 2>/dev/null | grep -qw nordvpn || usermod -aG nordvpn "$u"
+done
+exit 0

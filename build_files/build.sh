@@ -120,7 +120,15 @@ kwriteconfig6 --file /etc/plasmalogin.conf --group Greeter --group Wallpaper --g
   || echo "WARNING: login screen wallpaper not set"
 
 #### NordVPN built in (repo file comes from system_files/etc/yum.repos.d/nordvpn.repo)
+# The repo file asks for NordVPN's signing key, so fetch it first or the install fails.
 if [ -f /etc/yum.repos.d/nordvpn.repo ]; then
-  dnf5 install -y nordvpn nordvpn-gui || echo "WARNING: NordVPN not installed in the image"
-  systemctl enable nordvpnd.service || true
+  mkdir -p /etc/pki/rpm-gpg
+  curl -fsSL --retry 3 https://repo.nordvpn.com/gpg/nordvpn_public.asc -o /etc/pki/rpm-gpg/nordvpn_public.asc \
+    || echo "WARNING: couldn't download NordVPN's signing key"
+  if dnf5 install -y nordvpn nordvpn-gui; then
+    chmod 755 /usr/libexec/monster-nordvpn-group
+    systemctl enable nordvpnd.service monster-nordvpn-group.service || true
+  else
+    echo "WARNING: NordVPN not installed in the image"
+  fi
 fi

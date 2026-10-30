@@ -14,6 +14,8 @@ cp -avf "/ctx/system_files"/. /
 
 # this installs a package from fedora repos
 dnf5 install -y tmux
+# Drive Check (Monster Magic) reads drive health with smartctl; fwupd is already in Bazzite.
+dnf5 install -y smartmontools || echo "WARNING: smartmontools not installed"
 
 # Use a COPR Example:
 #

@@ -95,15 +95,23 @@ sed -i -e 's/^NAME=.*/NAME="Monster Linux"/' \
        -e 's/^PRETTY_NAME=.*/PRETTY_NAME="Monster Linux (built on Bazzite)"/' /usr/lib/os-release
 
 #### Monster Gloop boot splash (Gloop blinks while the PC starts)
-# If this part has a problem, the build still finishes and the PC keeps the Bazzite splash.
-if command -v plymouth-set-default-theme >/dev/null && [ -f /usr/share/plymouth/themes/monster-gloop/monster-gloop.plymouth ]; then
-  if plymouth-set-default-theme monster-gloop; then
-    KVER=$(ls /usr/lib/modules | sort -V | tail -n1)
-    dracut --no-hostonly --kver "$KVER" --reproducible --add ostree -f "/usr/lib/modules/$KVER/initramfs.img" \
-      || echo "WARNING: initramfs rebuild failed; boot splash unchanged"
+# Bazzite doesn't ship Plymouth's "script" plugin, which the Gloop splash needs.
+# Without it Plymouth silently falls back to the Bazzite spinner.
+# If any part fails, the build still finishes and the PC keeps the Bazzite splash.
+dnf5 install -y plymouth-plugin-script || echo "WARNING: plymouth script plugin not installed"
+mkdir -p /etc/plymouth
+printf '[Daemon]\nTheme=monster-gloop\n' > /etc/plymouth/plymouthd.conf
+if [ -f /usr/lib64/plymouth/script.so ] && [ -f /usr/share/plymouth/themes/monster-gloop/monster-gloop.plymouth ]; then
+  # Same dracut call Bazzite uses (build_files/build-initramfs), so the start-up files match theirs plus the splash.
+  QK="$(dnf5 repoquery --installed --queryformat='%{evr}.%{arch}' kernel 2>/dev/null | tail -n1)"
+  [ -n "$QK" ] && [ -d "/usr/lib/modules/$QK" ] || QK="$(ls /usr/lib/modules | sort -V | tail -n1)"
+  if /usr/bin/dracut --no-hostonly --kver "$QK" --reproducible --zstd -v --add ostree --add fido2 -f "/usr/lib/modules/$QK/initramfs.img"; then
+    chmod 0600 "/usr/lib/modules/$QK/initramfs.img"
+  else
+    echo "WARNING: initramfs rebuild failed; boot splash unchanged"
   fi
 else
-  echo "WARNING: Plymouth splash not set (tool or theme missing)"
+  echo "WARNING: Plymouth splash not set (script plugin or theme missing)"
 fi
 
 #### Login screen (Bazzite uses Plasma Login Manager, which reads /etc/plasmalogin.conf)

@@ -143,7 +143,7 @@ echo "::notice title=Monster Portal::$(grep -h '^Exec=' /usr/share/applications/
 HID=""
 for f in /usr/share/applications/*.desktop; do
   case "$(basename "$f")" in org.monsterlinux.updater.desktop|org.kde.discover*) continue;; esac
-  if grep -qiE '^Exec=.*(ujust (update|upgrade)|uupd|topgrade|system-update)' "$f" || grep -qiE '^Name=(System Update|Update System|Bazzite Update|Update Bazzite)$' "$f"; then
+  if [ "$(basename "$f")" = io.github.rfrench3.bazzite-updater.desktop ] || grep -qiE '^Exec=.*(ujust (update|upgrade)|uupd|topgrade|system-update|bazzite-updater)' "$f" || grep -qiE '^Name=(System Update|Update System|Bazzite Update|Update Bazzite)$' "$f"; then
     grep -q '^NoDisplay=' "$f" && sed -i 's/^NoDisplay=.*/NoDisplay=true/' "$f" || sed -i 's/^\[Desktop Entry\]/[Desktop Entry]\nNoDisplay=true/' "$f"
     HID="$HID $(basename "$f")"
   fi

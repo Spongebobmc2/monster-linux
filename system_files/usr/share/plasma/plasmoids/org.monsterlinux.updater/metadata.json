@@ -1,0 +1,14 @@
+{
+  "KPackageStructure": "Plasma/Applet",
+  "KPlugin": {
+    "Id": "org.monsterlinux.updater",
+    "Name": "Monster Updater",
+    "Description": "Updates your system, apps and drivers, and shows every step.",
+    "Icon": "org.monsterlinux.updater",
+    "Category": "System Information",
+    "Authors": [{ "Name": "Spongebobmc2" }],
+    "License": "GPL-2.0-or-later",
+    "Version": "1.0"
+  },
+  "X-Plasma-API-Minimum-Version": "6.0"
+}

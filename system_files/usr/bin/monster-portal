@@ -1,0 +1,77 @@
+#!/usr/bin/python3
+# Monster Portal: Bazzite's Portal app (yafti_gtk.py) with the Monster "Slime Pop" look.
+# It runs the very same Portal code and only adds the Monster name, header and style on top.
+import importlib.machinery, importlib.util, os, sys
+
+SRC = "/usr/bin/yafti_gtk.py"
+DIR = "/usr/share/monster-linux/portal"
+if not os.path.exists(SRC):
+    sys.exit("Monster Portal: the Portal app (yafti_gtk.py) is not installed.")
+
+loader = importlib.machinery.SourceFileLoader("yafti_gtk", SRC)
+spec = importlib.util.spec_from_loader("yafti_gtk", loader)
+y = importlib.util.module_from_spec(spec)
+loader.exec_module(y)
+
+from gi.repository import Gtk  # version already chosen by the Portal code
+
+y.APP_TITLE = "Monster Portal"
+y.DEFAULT_ACCENT = "#3f7a0e"
+try:
+    y.AUTOSTART_CONTENT = y.AUTOSTART_CONTENT.replace("yafti_gtk.py", "monster-portal").replace("Bazzite Portal", "Monster Portal")
+except Exception:
+    pass
+
+def os_version():
+    try:
+        for line in open("/usr/lib/os-release"):
+            if line.startswith("VERSION="):
+                return line.split("=", 1)[1].strip().strip('"').split(" ")[0]
+    except Exception:
+        pass
+    return ""
+
+_orig_init = y.YaftiGTK.__init__
+def _monster_init(self, *a, **k):
+    _orig_init(self, *a, **k)
+    try:
+        self.set_title("Monster Portal")
+        self.set_default_size(900, 660)
+        self.add_css_class("monster-portal")
+        css = Gtk.CssProvider()
+        css.load_from_path(os.path.join(DIR, "slime-pop.css"))
+        Gtk.StyleContext.add_provider_for_display(self.get_display(), css, Gtk.STYLE_PROVIDER_PRIORITY_USER)
+
+        head = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=14)
+        head.add_css_class("monster-header")
+        pic = Gtk.Picture.new_for_filename(os.path.join(DIR, "gloop.png"))
+        pic.set_size_request(50, 52)
+        pic.set_can_shrink(True)
+        try:
+            pic.set_content_fit(Gtk.ContentFit.CONTAIN)
+        except Exception:
+            pass
+        pic.set_valign(Gtk.Align.CENTER)
+        head.append(pic)
+        words = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        words.set_valign(Gtk.Align.CENTER)
+        words.set_hexpand(True)
+        t = Gtk.Label(label="Monster Portal", xalign=0); t.add_css_class("monster-title")
+        s = Gtk.Label(label="Every button does one job. Pick what you need.", xalign=0); s.add_css_class("monster-sub")
+        words.append(t); words.append(s)
+        head.append(words)
+        ver = os_version()
+        if ver:
+            v = Gtk.Label(label="MONSTER LINUX " + ver); v.add_css_class("monster-ver"); v.set_valign(Gtk.Align.CENTER)
+            head.append(v)
+        drip = Gtk.Box(); drip.add_css_class("monster-drip"); drip.set_size_request(-1, 14)
+
+        box = self.get_child()
+        box.prepend(drip)
+        box.prepend(head)
+    except Exception as e:  # the look must never stop the Portal from opening
+        print("Monster Portal look not applied:", e, file=sys.stderr)
+y.YaftiGTK.__init__ = _monster_init
+
+sys.argv[0] = "monster-portal"
+y.main()

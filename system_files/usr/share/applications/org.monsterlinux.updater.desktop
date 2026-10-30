@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Monster Updater
+GenericName=System Update
+Comment=Updates your system, drivers and apps, and shows every step
+Icon=org.monsterlinux.updater
+Exec=plasmawindowed org.monsterlinux.updater
+Keywords=update;upgrade;system;drivers;firmware;apps;flatpak;
+Categories=Qt;KDE;System;

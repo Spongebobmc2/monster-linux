@@ -75,6 +75,8 @@ Rectangle {
     function undo() { if (!undoStack.length) return; const u = undoStack.slice(); const s = JSON.parse(u.pop()); undoStack = u; st = s.st; themeName = s.n }
     function set(key, value) { snapshot(); const s = JSON.parse(JSON.stringify(st)); s[key] = value; st = s; themeName = "My theme" }
     function setColor(key, value) { snapshot(); const s = JSON.parse(JSON.stringify(st)); s.c[key] = hx(value).toLowerCase(); st = s; themeName = "My theme" }
+    // same as setColor but without a new Undo step (used while dragging in the color spectrum)
+    function setColorLive(key, value) { const s = JSON.parse(JSON.stringify(st)); s.c[key] = hx(value).toLowerCase(); st = s; themeName = "My theme" }
     function buildState(item, prev) {
         const t = JSON.parse(JSON.stringify(item.st))
         prev = prev || {}

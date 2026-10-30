@@ -1,0 +1,14 @@
+{
+  "KPackageStructure": "Plasma/Applet",
+  "KPlugin": {
+    "Id": "org.monsterlinux.magic",
+    "Name": "Monster Magic",
+    "Description": "One button, one promise: smart fixes that prove they worked.",
+    "Icon": "tools-wizard",
+    "Category": "Utilities",
+    "Authors": [{ "Name": "Spongebobmc2" }],
+    "License": "GPL-2.0-or-later",
+    "Version": "1.0"
+  },
+  "X-Plasma-API-Minimum-Version": "6.0"
+}

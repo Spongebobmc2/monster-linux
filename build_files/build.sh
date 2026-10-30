@@ -128,3 +128,25 @@ if [ -f /etc/yum.repos.d/nordvpn.repo ]; then
     echo "::warning title=NordVPN::NordVPN not installed in the image"
   fi
 fi
+
+#### Monster Portal + Monster Updater ("Slime Pop" look)
+# Portal: same Bazzite Portal app, opened through monster-portal so it gets the Monster look and name.
+chmod 755 /usr/bin/monster-portal /usr/share/plasma/plasmoids/org.monsterlinux.updater/contents/code/updater.sh
+for f in /usr/share/applications/io.github.ublue_os.yafti_gtk.desktop /etc/skel/.config/autostart/bazzite-portal.desktop /etc/xdg/autostart/bazzite-portal.desktop; do
+  [ -f "$f" ] || continue
+  sed -i -E 's@^Exec=(/usr/bin/)?yafti_gtk\.py@Exec=/usr/bin/monster-portal@; s@^Icon=.*@Icon=org.monsterlinux.portal@; s@^Name=.*@Name=Monster Portal@; /^Name\[/d' "$f"
+done
+[ -f /usr/libexec/ublue-nvidia-flatpak-runtime-notify ] && sed -i 's@/usr/bin/yafti_gtk.py@/usr/bin/monster-portal@g' /usr/libexec/ublue-nvidia-flatpak-runtime-notify
+echo "::notice title=Monster Portal::$(grep -h '^Exec=' /usr/share/applications/io.github.ublue_os.yafti_gtk.desktop 2>/dev/null || echo 'Portal entry not found')"
+# Updater: Monster Updater runs Bazzite's own updater (uupd). Any other "update" entry in the menu is hidden
+# so there is only one updater to find.
+HID=""
+for f in /usr/share/applications/*.desktop; do
+  case "$(basename "$f")" in org.monsterlinux.updater.desktop|org.kde.discover*) continue;; esac
+  if grep -qiE '^Exec=.*(ujust (update|upgrade)|uupd|topgrade|system-update)' "$f" || grep -qiE '^Name=(System Update|Update System|Bazzite Update|Update Bazzite)$' "$f"; then
+    grep -q '^NoDisplay=' "$f" && sed -i 's/^NoDisplay=.*/NoDisplay=true/' "$f" || sed -i 's/^\[Desktop Entry\]/[Desktop Entry]\nNoDisplay=true/' "$f"
+    HID="$HID $(basename "$f")"
+  fi
+done
+echo "::notice title=Monster Updater::Hid other updater entries:${HID:- none found}"
+fc-cache -f /usr/share/fonts/monster >/dev/null 2>&1 || true

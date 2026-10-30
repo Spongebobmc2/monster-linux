@@ -1,0 +1,59 @@
+/* Monster Portal — "Slime Pop" look. Loaded on top of the normal GTK theme, only inside Monster Portal. */
+window, dialog, window.background {
+  background-color: #fbfdf6;
+  color: #1b2610;
+  font-family: "Sora", "Noto Sans", sans-serif;
+}
+window label { color: #1b2610; }
+.dim-label, window label.dim-label { color: #5f6d52; opacity: 1; }
+
+/* Lime header with Gloop and the drip edge under it */
+.monster-header { background-color: #8cc22a; padding: 16px 22px 10px 22px; }
+.monster-header .monster-title { font-family: "Unbounded", "Sora", sans-serif; font-weight: 800; font-size: 21px; color: #14200a; }
+.monster-header .monster-sub { font-size: 12.5px; color: #24360f; }
+.monster-header .monster-ver { font-size: 11px; font-weight: 700; color: #14200a; background-color: rgba(255,255,255,.45); border-radius: 99px; padding: 3px 10px; }
+.monster-drip { min-height: 14px; background-image: url("drip.svg"); background-repeat: repeat-x; background-position: left top; background-size: 34px 14px; background-color: transparent; }
+
+/* Search */
+entry.search, entry {
+  background-color: #ffffff; color: #1b2610;
+  border: 1px solid #cfe3a8; border-radius: 99px;
+  min-height: 36px; padding-left: 14px; padding-right: 14px; box-shadow: none;
+}
+entry:focus-within { border-color: #3f7a0e; outline: 2px solid rgba(63,122,14,.25); outline-offset: 0; }
+
+/* Tabs as pills */
+stackswitcher { margin-top: 2px; }
+stackswitcher button, stackswitcher.linked > button {
+  background-color: #f1f8e2; background-image: none; color: #3d4a30;
+  border: 1px solid #e1eecb; border-radius: 99px; box-shadow: none;
+  margin-left: 3px; margin-right: 3px; padding: 6px 16px; font-weight: 600;
+}
+stackswitcher button:hover { background-color: #e3f3c4; }
+stackswitcher button:checked, stackswitcher.linked > button:checked {
+  background-color: #3f7a0e; color: #ffffff; border-color: #3f7a0e;
+}
+stackswitcher button:checked label { color: #ffffff; }
+
+/* Each action is a white card */
+frame { border: 1px solid #e1eecb; border-radius: 16px; background-color: #ffffff; }
+frame > border { border: none; border-radius: 16px; }
+frame > button, frame button {
+  background-color: transparent; background-image: none;
+  border: none; border-radius: 16px; box-shadow: none; padding: 2px 6px;
+}
+frame > button:hover { background-color: #f4fae8; }
+frame > button:active { background-color: #e3f3c4; }
+
+/* Buttons in dialogs */
+button { border-radius: 99px; }
+button.suggested-action { background-color: #3f7a0e; background-image: none; color: #ffffff; border-color: #3f7a0e; font-weight: 700; }
+button.suggested-action label { color: #ffffff; }
+.highlighted-action { border: 2px solid #8cc22a; border-radius: 16px; }
+.controller-focus { outline: 3px solid #3f7a0e; outline-offset: -3px; }
+
+/* Switch and scrollbars */
+switch:checked { background-color: #3f7a0e; border-color: #3f7a0e; }
+switch slider { background-color: #ffffff; }
+scrollbar slider { background-color: #cfe3a8; border-radius: 99px; min-width: 6px; }
+scrollbar slider:hover { background-color: #8cc22a; }

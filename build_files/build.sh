@@ -81,6 +81,18 @@ gtk-update-icon-cache -f /usr/share/icons/hicolor || true
 sed -i -e 's/^NAME=.*/NAME="Monster Linux"/' \
        -e 's/^PRETTY_NAME=.*/PRETTY_NAME="Monster Linux (built on Bazzite)"/' /usr/lib/os-release
 
+# Rename Bazzite's own apps (Portal, updater, docs...) to Monster in the app menu and search.
+# Only the names shown to people change; the apps themselves stay the same.
+RENAMED=""
+for f in $(grep -lis "^\(Name\|GenericName\|Comment\|Keywords\)\(\[[^]]*\]\)\?=.*bazzite" /usr/share/applications/*.desktop /etc/xdg/autostart/*.desktop /etc/skel/.config/autostart/*.desktop 2>/dev/null); do
+  sed -i -E '/^(Name|GenericName|Comment|Keywords|X-GNOME-FullName)(\[[^]]*\])?=/ s/Bazzite/Monster Linux/g; /^(Name|GenericName|Comment|Keywords)(\[[^]]*\])?=/ s/bazzite/monster/g' "$f"
+  RENAMED="$RENAMED $(basename "$f"): $(grep -m1 '^Name=' "$f" | cut -d= -f2) ·"
+done
+[ -f /usr/share/yafti/yafti.yml ] && sed -i 's/^title: Bazzite Portal/title: Monster Portal/' /usr/share/yafti/yafti.yml
+sed -i 's/Monster Linux Portal/Monster Portal/g' $(grep -lis "Monster Linux Portal" /usr/share/applications/*.desktop /etc/xdg/autostart/*.desktop /etc/skel/.config/autostart/*.desktop 2>/dev/null) 2>/dev/null || true
+echo "::notice title=Renamed apps::${RENAMED:-none found}"
+echo "::notice title=Update apps in menu::$(grep -lis "^Name=.*updat" /usr/share/applications/*.desktop 2>/dev/null | while read f; do printf "%s=%s · " "$(basename "$f")" "$(grep -m1 "^Name=" "$f" | cut -d= -f2)"; done)"
+
 #### Monster Gloop boot splash (Gloop blinks while the PC starts)
 # Bazzite doesn't ship Plymouth's "script" plugin, which the Gloop splash needs.
 # Without it Plymouth silently falls back to the Bazzite spinner.

@@ -1,0 +1,12 @@
+{
+  "KPlugin": {
+    "Id": "MonsterFireflies",
+    "Name": "Monster Fireflies",
+    "Authors": [
+      {
+        "Name": "Spongebobmc2"
+      }
+    ],
+    "License": "CC-BY-SA-4.0"
+  }
+}

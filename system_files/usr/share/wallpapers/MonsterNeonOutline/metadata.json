@@ -1,0 +1,12 @@
+{
+  "KPlugin": {
+    "Id": "MonsterNeonOutline",
+    "Name": "Monster Neon Outline",
+    "Authors": [
+      {
+        "Name": "Spongebobmc2"
+      }
+    ],
+    "License": "CC-BY-SA-4.0"
+  }
+}

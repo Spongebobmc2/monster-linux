@@ -123,6 +123,10 @@ kwriteconfig6 --file /etc/plasmalogin.conf --group Greeter --group Wallpaper --g
 #### NordVPN built in (repo file comes from system_files/etc/yum.repos.d/nordvpn.repo)
 # The repo file asks for NordVPN's signing key, so fetch it first or the install fails.
 if [ -f /etc/yum.repos.d/nordvpn.repo ]; then
+  # nordvpn-gui installs into /opt. On Fedora Atomic /opt is a link to /var/opt,
+  # which an image can't write to, so the install fails ("cpio: mkdir failed").
+  # Make /opt a real, read-only folder inside the image (the template's own suggested fix).
+  if [ -L /opt ]; then rm /opt && mkdir -p /opt; fi
   mkdir -p /etc/pki/rpm-gpg
   curl -fsSL --retry 3 https://repo.nordvpn.com/gpg/nordvpn_public.asc -o /etc/pki/rpm-gpg/nordvpn_public.asc \
     || echo "::warning title=NordVPN key::Couldn't download NordVPN's signing key"

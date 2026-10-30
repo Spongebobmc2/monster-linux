@@ -107,6 +107,7 @@ if [ -f /usr/lib64/plymouth/script.so ] && [ -f /usr/share/plymouth/themes/monst
   [ -n "$QK" ] && [ -d "/usr/lib/modules/$QK" ] || QK="$(ls /usr/lib/modules | sort -V | tail -n1)"
   if /usr/bin/dracut --no-hostonly --kver "$QK" --reproducible --zstd -v --add ostree --add fido2 -f "/usr/lib/modules/$QK/initramfs.img"; then
     chmod 0600 "/usr/lib/modules/$QK/initramfs.img"
+    echo "::notice title=Boot splash::Gloop splash built into the initramfs for $QK"
   else
     echo "WARNING: initramfs rebuild failed; boot splash unchanged"
   fi
@@ -128,7 +129,8 @@ if [ -f /etc/yum.repos.d/nordvpn.repo ]; then
   if dnf5 install -y nordvpn nordvpn-gui; then
     chmod 755 /usr/libexec/monster-nordvpn-group
     systemctl enable nordvpnd.service monster-nordvpn-group.service || true
+    echo "::notice title=NordVPN::Installed $(rpm -q nordvpn nordvpn-gui | tr '\n' ' ')"
   else
-    echo "WARNING: NordVPN not installed in the image"
+    echo "::warning title=NordVPN::NordVPN not installed in the image"
   fi
 fi

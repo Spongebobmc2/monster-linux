@@ -1,0 +1,12 @@
+{
+  "KPlugin": {
+    "Id": "MonsterBlueprint",
+    "Name": "Monster Blueprint",
+    "Authors": [
+      {
+        "Name": "Spongebobmc2"
+      }
+    ],
+    "License": "CC-BY-SA-4.0"
+  }
+}

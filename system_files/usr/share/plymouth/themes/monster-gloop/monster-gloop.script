@@ -1,37 +1,74 @@
-# Monster Gloop Plymouth script
-Window.SetBackgroundTopColor(0.055, 0.078, 0.039);
-Window.SetBackgroundBottomColor(0.020, 0.031, 0.012);
+# Monster Linux boot / shutdown screen
+#   Start + updates : "Midnight Clean"  (bright Gloop, thin MONSTER lockup)
+#   Shut down + restart : "Silhouette"  (moonlit Gloop waving goodbye)
 
-open_img  = Image("gloop.png");
-blink_img = Image("gloop-blink.png");
-logo = Sprite(open_img);
-logo.SetX(Window.GetX() + Window.GetWidth()  / 2 - open_img.GetWidth()  / 2);
-logo.SetY(Window.GetY() + Window.GetHeight() / 2 - open_img.GetHeight() / 2 - 40);
+mode = Plymouth.GetMode();
+bye = (mode == "shutdown" || mode == "reboot");
 
-title = Sprite(Image.Text("MONSTER LINUX", 0.867, 0.902, 0.812));
-title.SetX(Window.GetX() + Window.GetWidth() / 2 - title.GetImage().GetWidth() / 2);
-title.SetY(logo.GetY() + open_img.GetHeight() + 30);
+W = Window.GetWidth();  H = Window.GetHeight();
+X0 = Window.GetX();     Y0 = Window.GetY();
+s = H / 1080 * 0.42;            # art is drawn large; this fits any screen height
+g = H / 1080 * 0.62;            # Gloop a bit bigger than the words
+fun sc (img) { return img.Scale(Math.Int(img.GetWidth() * s), Math.Int(img.GetHeight() * s)); }
+fun gs (img) { return img.Scale(Math.Int(img.GetWidth() * g), Math.Int(img.GetHeight() * g)); }
 
-frame = 0;
+cx = X0 + W * 0.66;            # Gloop sits center-right
+cy = Y0 + H * 0.38;
+
+if (bye) {
+    bg = Sprite(Image("sil_bg.png").Scale(W, H));
+    bg.SetPosition(X0, Y0, -10);
+    f1 = gs(Image("sil_wave1.png")); f2 = gs(Image("sil_wave2.png")); f3 = gs(Image("sil_wave3.png"));
+    fb = gs(Image("sil_blink.png"));
+    lock = sc(Image("sil_lockup.png"));
+    if (mode == "reboot") lab = sc(Image("mode_restart.png")); else lab = sc(Image("mode_shutdown.png"));
+} else {
+    Window.SetBackgroundTopColor(0.043, 0.051, 0.055);
+    Window.SetBackgroundBottomColor(0.024, 0.027, 0.031);
+    f1 = gs(Image("boot_open.png")); f2 = gs(Image("boot_left.png")); f3 = gs(Image("boot_right.png"));
+    fb = gs(Image("boot_blink.png"));
+    lock = sc(Image("boot_lockup.png"));
+    if (mode == "updates" || mode == "system-upgrade" || mode == "firmware-upgrade") lab = sc(Image("mode_updating.png"));
+    else lab = sc(Image("mode_starting.png"));
+}
+
+gloop = Sprite(f1);
+gloop.SetPosition(cx - f1.GetWidth() / 2, cy - f1.GetHeight() / 2, 1);
+word = Sprite(lock);
+word.SetPosition(cx - lock.GetWidth() / 2, cy + f1.GetHeight() / 2 + 10 * s, 1);
+label = Sprite(lab);
+label.SetPosition(cx - lab.GetWidth() / 2, word.GetY() + lock.GetHeight() + 40 * s, 1);
+
+t = 0;
 fun refresh_callback () {
-    frame++;
-    if ((frame % 160) < 6) logo.SetImage(blink_img);
-    else logo.SetImage(open_img);
+    t++;
+    label.SetOpacity(0.55 + 0.45 * Math.Sin(t / 18));     # gentle breathing
+    if (bye) {
+        # wave: up, middle, down, middle ... with a blink now and then
+        w = Math.Int(t / 7) % 4;
+        if ((t % 150) < 6) gloop.SetImage(fb);
+        else if (w == 0) gloop.SetImage(f1);
+        else if (w == 2) gloop.SetImage(f3);
+        else gloop.SetImage(f2);
+    } else {
+        c = t % 400;
+        if (c < 6 || (c > 200 && c < 206)) gloop.SetImage(fb);       # blink
+        else if (c > 90 && c < 150) gloop.SetImage(f2);              # glance left
+        else if (c > 280 && c < 330) gloop.SetImage(f3);             # glance right
+        else gloop.SetImage(f1);
+    }
 }
 Plymouth.SetRefreshFunction(refresh_callback);
 
 # Disk-encryption password prompt
-prompt = Sprite();
-bullets = Sprite();
+prompt = Sprite(); bullets = Sprite();
 fun display_password_callback (text, count) {
-    prompt.SetImage(Image.Text(text, 0.867, 0.902, 0.812));
-    prompt.SetX(Window.GetX() + Window.GetWidth() / 2 - prompt.GetImage().GetWidth() / 2);
-    prompt.SetY(title.GetY() + 50);
+    prompt.SetImage(Image.Text(text, 0.933, 0.949, 0.918));
+    prompt.SetPosition(cx - prompt.GetImage().GetWidth() / 2, label.GetY() + 40 * s + 20, 2);
     stars = "";
     for (i = 0; i < count; i++) stars += "*";
     bullets.SetImage(Image.Text(stars, 0.659, 0.878, 0.227));
-    bullets.SetX(Window.GetX() + Window.GetWidth() / 2 - bullets.GetImage().GetWidth() / 2);
-    bullets.SetY(prompt.GetY() + 30);
+    bullets.SetPosition(cx - bullets.GetImage().GetWidth() / 2, prompt.GetY() + 30, 2);
     prompt.SetOpacity(1); bullets.SetOpacity(1);
 }
 fun display_normal_callback () { prompt.SetOpacity(0); bullets.SetOpacity(0); }

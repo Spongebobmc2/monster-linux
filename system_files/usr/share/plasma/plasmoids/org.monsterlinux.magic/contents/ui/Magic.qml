@@ -150,7 +150,9 @@ Rectangle {
             // ---- the buttons ----
             GridLayout {
                 Layout.fillHeight: true
-                Layout.preferredWidth: parent.width * 0.52
+                Layout.fillWidth: false
+                Layout.preferredWidth: Math.round(magic.width * 0.5)
+                Layout.maximumWidth: Math.round(magic.width * 0.5)
                 columns: 2; rowSpacing: 10; columnSpacing: 10
                 Repeater {
                     model: magic.buttons
@@ -187,6 +189,7 @@ Rectangle {
             // ---- what's happening + proof ----
             Rectangle {
                 Layout.fillWidth: true; Layout.fillHeight: true
+                Layout.minimumWidth: 320
                 radius: 14; color: magic.panel; border.color: magic.line
                 ColumnLayout {
                     anchors.fill: parent; anchors.margins: 16; spacing: 10

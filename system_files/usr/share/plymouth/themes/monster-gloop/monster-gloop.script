@@ -8,23 +8,25 @@ bye = (mode == "shutdown" || mode == "reboot");
 W = Window.GetWidth();  H = Window.GetHeight();
 X0 = Window.GetX();     Y0 = Window.GetY();
 s = H / 1080 * 0.42;            # art is drawn large; this fits any screen height
+g = H / 1080 * 0.62;            # Gloop a bit bigger than the words
 fun sc (img) { return img.Scale(Math.Int(img.GetWidth() * s), Math.Int(img.GetHeight() * s)); }
+fun gs (img) { return img.Scale(Math.Int(img.GetWidth() * g), Math.Int(img.GetHeight() * g)); }
 
 cx = X0 + W * 0.66;            # Gloop sits center-right
-cy = Y0 + H * 0.40;
+cy = Y0 + H * 0.38;
 
 if (bye) {
     bg = Sprite(Image("sil_bg.png").Scale(W, H));
     bg.SetPosition(X0, Y0, -10);
-    f1 = sc(Image("sil_wave1.png")); f2 = sc(Image("sil_wave2.png")); f3 = sc(Image("sil_wave3.png"));
-    fb = sc(Image("sil_blink.png"));
+    f1 = gs(Image("sil_wave1.png")); f2 = gs(Image("sil_wave2.png")); f3 = gs(Image("sil_wave3.png"));
+    fb = gs(Image("sil_blink.png"));
     lock = sc(Image("sil_lockup.png"));
     if (mode == "reboot") lab = sc(Image("mode_restart.png")); else lab = sc(Image("mode_shutdown.png"));
 } else {
     Window.SetBackgroundTopColor(0.043, 0.051, 0.055);
     Window.SetBackgroundBottomColor(0.024, 0.027, 0.031);
-    f1 = sc(Image("boot_open.png")); f2 = sc(Image("boot_left.png")); f3 = sc(Image("boot_right.png"));
-    fb = sc(Image("boot_blink.png"));
+    f1 = gs(Image("boot_open.png")); f2 = gs(Image("boot_left.png")); f3 = gs(Image("boot_right.png"));
+    fb = gs(Image("boot_blink.png"));
     lock = sc(Image("boot_lockup.png"));
     if (mode == "updates" || mode == "system-upgrade" || mode == "firmware-upgrade") lab = sc(Image("mode_updating.png"));
     else lab = sc(Image("mode_starting.png"));

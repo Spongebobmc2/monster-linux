@@ -125,8 +125,11 @@ kwriteconfig6 --file /etc/plasmalogin.conf --group Greeter --group Wallpaper --g
 if [ -f /etc/yum.repos.d/nordvpn.repo ]; then
   mkdir -p /etc/pki/rpm-gpg
   curl -fsSL --retry 3 https://repo.nordvpn.com/gpg/nordvpn_public.asc -o /etc/pki/rpm-gpg/nordvpn_public.asc \
-    || echo "WARNING: couldn't download NordVPN's signing key"
-  if dnf5 install -y nordvpn nordvpn-gui; then
+    || echo "::warning title=NordVPN key::Couldn't download NordVPN's signing key"
+  NORD_RC=0; NORD_OUT=$(dnf5 install -y nordvpn nordvpn-gui 2>&1) || NORD_RC=$?   # "|| " keeps set -e from stopping the build
+  echo "$NORD_OUT"
+  [ "$NORD_RC" -eq 0 ] || echo "::warning title=NordVPN error::$(echo "$NORD_OUT" | grep -vE '^\s*$' | tail -n 6 | tr '\n' ' ' | cut -c1-900)"
+  if [ "$NORD_RC" -eq 0 ]; then
     chmod 755 /usr/libexec/monster-nordvpn-group
     systemctl enable nordvpnd.service monster-nordvpn-group.service || true
     echo "::notice title=NordVPN::Installed $(rpm -q nordvpn nordvpn-gui | tr '\n' ' ')"

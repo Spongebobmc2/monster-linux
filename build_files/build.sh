@@ -22,9 +22,7 @@ dnf5 install -y tmux
 # Disable COPRs so they don't end up enabled on the final image:
 # dnf5 -y copr disable ublue-os/staging
 
-#### Example for enabling a System Unit File
-
-systemctl enable podman.socket
+# (Template example "systemctl enable podman.socket" removed: Bazzite already turns Podman on for every user.)
 
 
    #### Monster Linux: trust images signed with our key
@@ -45,29 +43,16 @@ kwriteconfig6 --file /etc/xdg/ksplashrc --group KSplash --key Theme org.monsterl
 kwriteconfig6 --file /etc/xdg/konsolerc --group "Desktop Entry" --key DefaultProfile MonsterGloop.profile
 kwriteconfig6 --file /etc/xdg/kscreenlockerrc --group Greeter --group Wallpaper --group org.kde.image --group General --key Image "file:///usr/share/wallpapers/MonsterGloop/"
 
-# Login screen background
-if [ -d /usr/share/sddm/themes/breeze ]; then
-cat > /usr/share/sddm/themes/breeze/theme.conf.user <<'EOF'
-[General]
-background=/usr/share/wallpapers/MonsterGloop/contents/images/3840x2160.png
-type=image
-EOF
-fi
-
-gtk-update-icon-cache -f /usr/share/icons/hicolor || true
 
 #### Monster Linux taskbar buttons (Network Fix + Lockdown)
 chmod 755 /usr/bin/monster-lockdown /usr/bin/monster-netfix
 
 #### Monster Themes Studio (System Settings > Appearance & Style)
 chmod 755 /usr/share/plasma/plasmoids/org.monsterlinux.themesstudio/contents/code/apply.sh
-# System Settings entry: put it where KDE keeps its own external entries, plus the usual folders
-for f in $(grep -rls SystemSettingsExternalApp /usr/share/kservices6 /usr/share/systemsettings /usr/share/applications 2>/dev/null | head -n 3); do
-  cp /usr/share/monster-linux/monster-themes-studio-settings.desktop "$(dirname "$f")/"
-done
-for d in /usr/share/kservices6 /usr/share/systemsettings/externalmodules; do
-  mkdir -p "$d" && cp /usr/share/monster-linux/monster-themes-studio-settings.desktop "$d/"
-done
+# System Settings entry: one copy, in the folder Plasma 6 System Settings actually reads
+# (plasma/systemsettings/externalmodules, per systemsettings' kcmmetadatahelpers.h).
+mkdir -p /usr/share/plasma/systemsettings/externalmodules
+cp /usr/share/monster-linux/monster-themes-studio-settings.desktop /usr/share/plasma/systemsettings/externalmodules/
 # Hide KDE's own appearance pages (users can bring them back in the Studio under More).
 # Written as plain text: kwriteconfig6 failed here in the build (exit code 2).
 cat >> /etc/xdg/kdeglobals <<'EOF'

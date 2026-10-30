@@ -1,0 +1,12 @@
+{
+  "KPlugin": {
+    "Id": "MonsterSlimePop",
+    "Name": "Monster Slime Pop",
+    "Authors": [
+      {
+        "Name": "Spongebobmc2"
+      }
+    ],
+    "License": "CC-BY-SA-4.0"
+  }
+}

@@ -34,7 +34,8 @@ Rectangle {
         ["plug",      6, "Plug and Play Check", "Tests everything you plugged in", true],
         ["fast",      7, "Start Fast", "Makes your PC start quicker and shows the time saved", true],
         ["space",     8, "Free Up Space Safely", "Clears only things that come back by themselves", true],
-        ["safe",      9, "Am I Safe?", "Checks your protection and fixes what it can", true]
+        ["safe",      9, "Am I Safe?", "Checks your protection and fixes what it can", true],
+        ["drive",    11, "Drive Check", "Checks SSD health, runs TRIM and looks for firmware updates", true]
     ]
 
     property bool showFirst: true          // #10 Show Me Once
@@ -284,6 +285,14 @@ Rectangle {
                             text: "PROOF  ·  " + magic.proof
                             color: parent.tone; font.family: magic.font; font.pixelSize: 16; font.bold: true; wrapMode: Text.WordWrap
                         }
+                    }
+
+                    // extra action for "Drive Check": install firmware updates it found
+                    Rectangle {
+                        visible: magic.current === "drive" && magic.proof.indexOf("update(s) available") >= 0 && !magic.busy
+                        implicitWidth: 240; implicitHeight: 42; radius: 10; color: magic.lime
+                        Text { anchors.centerIn: parent; text: "Install firmware updates"; color: "#11180a"; font.family: magic.font; font.pixelSize: 14; font.bold: true }
+                        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: magic.go("drive-firmware") }
                     }
 
                     // extra action for "It Worked Yesterday"

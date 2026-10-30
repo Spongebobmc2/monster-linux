@@ -22,9 +22,7 @@ dnf5 install -y tmux
 # Disable COPRs so they don't end up enabled on the final image:
 # dnf5 -y copr disable ublue-os/staging
 
-#### Example for enabling a System Unit File
-
-systemctl enable podman.socket
+# (Template example "systemctl enable podman.socket" removed: Bazzite already turns Podman on for every user.)
 
 
    #### Monster Linux: trust images signed with our key
@@ -45,29 +43,16 @@ kwriteconfig6 --file /etc/xdg/ksplashrc --group KSplash --key Theme org.monsterl
 kwriteconfig6 --file /etc/xdg/konsolerc --group "Desktop Entry" --key DefaultProfile MonsterGloop.profile
 kwriteconfig6 --file /etc/xdg/kscreenlockerrc --group Greeter --group Wallpaper --group org.kde.image --group General --key Image "file:///usr/share/wallpapers/MonsterGloop/"
 
-# Login screen background
-if [ -d /usr/share/sddm/themes/breeze ]; then
-cat > /usr/share/sddm/themes/breeze/theme.conf.user <<'EOF'
-[General]
-background=/usr/share/wallpapers/MonsterGloop/contents/images/3840x2160.png
-type=image
-EOF
-fi
-
-gtk-update-icon-cache -f /usr/share/icons/hicolor || true
 
 #### Monster Linux taskbar buttons (Network Fix + Lockdown)
 chmod 755 /usr/bin/monster-lockdown /usr/bin/monster-netfix
 
 #### Monster Themes Studio (System Settings > Appearance & Style)
 chmod 755 /usr/share/plasma/plasmoids/org.monsterlinux.themesstudio/contents/code/apply.sh
-# System Settings entry: put it where KDE keeps its own external entries, plus the usual folders
-for f in $(grep -rls SystemSettingsExternalApp /usr/share/kservices6 /usr/share/systemsettings /usr/share/applications 2>/dev/null | head -n 3); do
-  cp /usr/share/monster-linux/monster-themes-studio-settings.desktop "$(dirname "$f")/"
-done
-for d in /usr/share/kservices6 /usr/share/systemsettings/externalmodules; do
-  mkdir -p "$d" && cp /usr/share/monster-linux/monster-themes-studio-settings.desktop "$d/"
-done
+# System Settings entry: one copy, in the folder Plasma 6 System Settings actually reads
+# (plasma/systemsettings/externalmodules, per systemsettings' kcmmetadatahelpers.h).
+mkdir -p /usr/share/plasma/systemsettings/externalmodules
+cp /usr/share/monster-linux/monster-themes-studio-settings.desktop /usr/share/plasma/systemsettings/externalmodules/
 # Hide KDE's own appearance pages (users can bring them back in the Studio under More).
 # Written as plain text: kwriteconfig6 failed here in the build (exit code 2).
 cat >> /etc/xdg/kdeglobals <<'EOF'
@@ -95,15 +80,24 @@ sed -i -e 's/^NAME=.*/NAME="Monster Linux"/' \
        -e 's/^PRETTY_NAME=.*/PRETTY_NAME="Monster Linux (built on Bazzite)"/' /usr/lib/os-release
 
 #### Monster Gloop boot splash (Gloop blinks while the PC starts)
-# If this part has a problem, the build still finishes and the PC keeps the Bazzite splash.
-if command -v plymouth-set-default-theme >/dev/null && [ -f /usr/share/plymouth/themes/monster-gloop/monster-gloop.plymouth ]; then
-  if plymouth-set-default-theme monster-gloop; then
-    KVER=$(ls /usr/lib/modules | sort -V | tail -n1)
-    dracut --no-hostonly --kver "$KVER" --reproducible --add ostree -f "/usr/lib/modules/$KVER/initramfs.img" \
-      || echo "WARNING: initramfs rebuild failed; boot splash unchanged"
+# Bazzite doesn't ship Plymouth's "script" plugin, which the Gloop splash needs.
+# Without it Plymouth silently falls back to the Bazzite spinner.
+# If any part fails, the build still finishes and the PC keeps the Bazzite splash.
+dnf5 install -y plymouth-plugin-script || echo "WARNING: plymouth script plugin not installed"
+mkdir -p /etc/plymouth
+printf '[Daemon]\nTheme=monster-gloop\n' > /etc/plymouth/plymouthd.conf
+if [ -f /usr/lib64/plymouth/script.so ] && [ -f /usr/share/plymouth/themes/monster-gloop/monster-gloop.plymouth ]; then
+  # Same dracut call Bazzite uses (build_files/build-initramfs), so the start-up files match theirs plus the splash.
+  QK="$(dnf5 repoquery --installed --queryformat='%{evr}.%{arch}' kernel 2>/dev/null | tail -n1)"
+  [ -n "$QK" ] && [ -d "/usr/lib/modules/$QK" ] || QK="$(ls /usr/lib/modules | sort -V | tail -n1)"
+  if /usr/bin/dracut --no-hostonly --kver "$QK" --reproducible --zstd -v --add ostree --add fido2 -f "/usr/lib/modules/$QK/initramfs.img"; then
+    chmod 0600 "/usr/lib/modules/$QK/initramfs.img"
+    echo "::notice title=Boot splash::Gloop splash built into the initramfs for $QK"
+  else
+    echo "WARNING: initramfs rebuild failed; boot splash unchanged"
   fi
 else
-  echo "WARNING: Plymouth splash not set (tool or theme missing)"
+  echo "WARNING: Plymouth splash not set (script plugin or theme missing)"
 fi
 
 #### Login screen (Bazzite uses Plasma Login Manager, which reads /etc/plasmalogin.conf)
@@ -112,7 +106,23 @@ kwriteconfig6 --file /etc/plasmalogin.conf --group Greeter --group Wallpaper --g
   || echo "WARNING: login screen wallpaper not set"
 
 #### NordVPN built in (repo file comes from system_files/etc/yum.repos.d/nordvpn.repo)
+# The repo file asks for NordVPN's signing key, so fetch it first or the install fails.
 if [ -f /etc/yum.repos.d/nordvpn.repo ]; then
-  dnf5 install -y nordvpn nordvpn-gui || echo "WARNING: NordVPN not installed in the image"
-  systemctl enable nordvpnd.service || true
+  # nordvpn-gui installs into /opt. On Fedora Atomic /opt is a link to /var/opt,
+  # which an image can't write to, so the install fails ("cpio: mkdir failed").
+  # Make /opt a real, read-only folder inside the image (the template's own suggested fix).
+  if [ -L /opt ]; then rm /opt && mkdir -p /opt; fi
+  mkdir -p /etc/pki/rpm-gpg
+  curl -fsSL --retry 3 https://repo.nordvpn.com/gpg/nordvpn_public.asc -o /etc/pki/rpm-gpg/nordvpn_public.asc \
+    || echo "::warning title=NordVPN key::Couldn't download NordVPN's signing key"
+  NORD_RC=0; NORD_OUT=$(dnf5 install -y nordvpn nordvpn-gui 2>&1) || NORD_RC=$?   # "|| " keeps set -e from stopping the build
+  echo "$NORD_OUT"
+  [ "$NORD_RC" -eq 0 ] || echo "::warning title=NordVPN error::$(echo "$NORD_OUT" | grep -vE '^\s*$' | tail -n 6 | tr '\n' ' ' | cut -c1-900)"
+  if [ "$NORD_RC" -eq 0 ]; then
+    chmod 755 /usr/libexec/monster-nordvpn-group
+    systemctl enable nordvpnd.service monster-nordvpn-group.service || true
+    echo "::notice title=NordVPN::Installed $(rpm -q nordvpn nordvpn-gui | tr '\n' ' ')"
+  else
+    echo "::warning title=NordVPN::NordVPN not installed in the image"
+  fi
 fi

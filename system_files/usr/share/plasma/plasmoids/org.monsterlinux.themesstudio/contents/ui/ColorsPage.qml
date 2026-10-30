@@ -1,4 +1,4 @@
-// Colors: the 12 colors KDE uses everywhere. Click a swatch to pick, or type a hex code.
+// Colors: the 12 colors KDE uses everywhere. Click a swatch to open the color spectrum, or type a hex code.
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls as QQC2
@@ -7,21 +7,21 @@ import QtQuick.Dialogs
 QQC2.ScrollView {
     id: page
     property var studio
-    property string editing: ""
+    property string editing: "accent"
     contentWidth: availableWidth
     clip: true
 
     ColorDialog {
         id: picker
         title: "Pick a color"
-        onAccepted: if (page.editing) page.studio.setColor(page.editing, selectedColor.toString())
+        onAccepted: if (page.editing) { page.studio.setColor(page.editing, selectedColor.toString()); spectrum.loadFrom(selectedColor.toString()) }
     }
 
     ColumnLayout {
         width: page.availableWidth
         spacing: 14
 
-        PageHeader { studio: page.studio; title: "Colors"; note: "Click a square to pick a new color. The stage on the right changes as you go." }
+        PageHeader { studio: page.studio; title: "Colors"; note: "Click a square, then drag in the color spectrum below to change it. The stage on the right changes as you go." }
 
         Repeater {
             model: [["Surfaces", ["bg", "bg2", "view", "panel", "button"]], ["Words", ["text", "muted", "link"]], ["Highlights", ["accent", "ok", "warn", "err"]]]
@@ -43,19 +43,23 @@ QQC2.ScrollView {
                             readonly property var info: page.studio.slots.find(s => s[0] === modelData)
                             Layout.fillWidth: true
                             implicitHeight: 54; radius: 8
-                            color: page.studio.rack2; border.color: page.studio.line
+                            color: page.editing === row.modelData ? "#1f2a14" : page.studio.rack2
+                            border.color: page.editing === row.modelData ? page.studio.led : page.studio.line
+                            function choose() { page.editing = row.modelData; spectrum.open(row.modelData, row.info[1]); page.contentItem.contentY = Math.max(0, spectrum.y - 40) }
+                            // the whole row is clickable (the hex box on the right still takes typing)
+                            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: row.choose() }
                             RowLayout {
                                 anchors.fill: parent; anchors.margins: 8; spacing: 10
                                 Rectangle {
                                     Layout.preferredWidth: 38; Layout.preferredHeight: 38; radius: 7
                                     color: page.studio.st.c[row.modelData]
-                                    border.color: "#ffffff33"
-                                    HoverHandler { cursorShape: Qt.PointingHandCursor }
-                                    TapHandler { onTapped: { page.editing = row.modelData; picker.selectedColor = page.studio.st.c[row.modelData]; picker.open() } }
+                                    border.width: page.editing === row.modelData ? 3 : 1
+                                    border.color: page.editing === row.modelData ? page.studio.led : "#ffffff33"
+                                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: row.choose() }
                                 }
                                 ColumnLayout {
                                     Layout.fillWidth: true; spacing: 0
-                                    Text { text: row.info[1]; color: page.studio.ink; font.family: page.studio.uiFont; font.pixelSize: 13; font.bold: true }
+                                    Text { text: row.info[1]; color: page.studio.ink; font.family: page.studio.uiFont; font.pixelSize: 13; font.bold: true; Layout.fillWidth: true; horizontalAlignment: Text.AlignLeft; elide: Text.ElideRight }
                                     Text { visible: row.info[2] !== ""; text: row.info[2]; color: page.studio.dim; font.family: page.studio.uiFont; font.pixelSize: 11; elide: Text.ElideRight; Layout.fillWidth: true }
                                 }
                                 QQC2.TextField {
@@ -88,9 +92,19 @@ QQC2.ScrollView {
                     border.width: page.studio.st.c.accent === modelData ? 3 : 1
                     border.color: page.studio.st.c.accent === modelData ? page.studio.ink : "#ffffff33"
                     HoverHandler { cursorShape: Qt.PointingHandCursor }
-                    TapHandler { onTapped: page.studio.setColor("accent", modelData) }
+                    TapHandler { onTapped: { page.studio.setColor("accent", modelData); if (page.editing === "accent") spectrum.loadFrom(modelData) } }
                 }
             }
+        }
+        // color spectrum: always here, edits whichever square is selected (Accent to start)
+        SpectrumPicker {
+            id: spectrum
+            studio: page.studio
+            Layout.fillWidth: true
+            Layout.topMargin: 6
+            showDone: false
+            onMoreOptions: { picker.selectedColor = page.studio.st.c[page.editing]; picker.open() }
+            Component.onCompleted: open("accent", "Accent")
         }
         Item { Layout.preferredHeight: 10 }
     }

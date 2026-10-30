@@ -68,7 +68,7 @@ glass)
         kw --file kwinrulesrc --group General --key rules "${RULES:+$RULES,}$G" ;;
     esac
     kw --file kwinrulesrc --group $G --key Description "Monster Linux see-through windows"
-    kw --file kwinrulesrc --group $G --key wmclass '^(?!steam_app|steam|gamescope|xwaylandvideobridge|.*\.exe).*'
+    kw --file kwinrulesrc --group $G --key wmclass '^(?!steam_app|steam|gamescope|xwaylandvideobridge|plasmawindowed|.*plasmawindowed|.*\.exe).*'
     kw --file kwinrulesrc --group $G --key wmclassmatch 3
     kw --file kwinrulesrc --group $G --key types 33
     kw --file kwinrulesrc --group $G --key opacityactive "$1"

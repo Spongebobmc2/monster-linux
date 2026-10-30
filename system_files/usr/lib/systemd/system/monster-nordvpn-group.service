@@ -1,0 +1,11 @@
+[Unit]
+Description=Monster Linux: add users to the NordVPN group
+Before=nordvpnd.service
+ConditionPathExists=/usr/bin/nordvpn
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/monster-nordvpn-group
+
+[Install]
+WantedBy=multi-user.target

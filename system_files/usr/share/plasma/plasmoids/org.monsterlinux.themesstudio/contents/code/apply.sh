@@ -95,7 +95,11 @@ iconset)
         else fail "Couldn't download the $shape icon set. Check the internet and try again"; rm -rf "$tmp"; exit 0; fi
         rm -rf "$tmp"
     fi
-    plasma-changeicons "$theme" >/dev/null 2>&1 && ok "Icons: $theme" || fail "Icons: $theme"
+    if plasma-changeicons "$theme" >/dev/null 2>&1; then
+        ok "Icons: $theme"
+        # keep the little-monster power buttons on top of the new icon set
+        [ -x /usr/libexec/monster-power-icons ] && /usr/libexec/monster-power-icons "$theme" && ok "Monster power buttons kept"
+    else fail "Icons: $theme"; fi
     ;;
 cursor)
     plasma-apply-cursortheme "$1" >/dev/null 2>&1 && ok "Mouse pointer: $1" || fail "Mouse pointer: $1"
@@ -162,7 +166,7 @@ classic)
 list)
     case "$1" in
         cursors)    for d in /usr/share/icons/* "$DATA"/icons/* "$HOME"/.icons/*; do [ -d "$d/cursors" ] && basename "$d"; done | sort -u ;;
-        iconthemes) for d in /usr/share/icons/* "$DATA"/icons/*; do [ -f "$d/index.theme" ] && grep -q '^Directories=' "$d/index.theme" && basename "$d"; done | sort -u ;;
+        iconthemes) for d in /usr/share/icons/* "$DATA"/icons/*; do case "$(basename "$d")" in Monster-Wrap|Monster-Login) continue;; esac; [ -f "$d/index.theme" ] && grep -q '^Directories=' "$d/index.theme" && basename "$d"; done | sort -u ;;
         wallpapers) for d in /usr/share/wallpapers/* "$DATA"/wallpapers/*; do
                         if [ -d "$d/contents/images" ]; then ls -S "$d"/contents/images/* 2>/dev/null | head -n1
                         elif [ -f "$d" ]; then echo "$d"; fi

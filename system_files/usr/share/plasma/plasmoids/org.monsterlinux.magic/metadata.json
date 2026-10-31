@@ -4,7 +4,7 @@
     "Id": "org.monsterlinux.magic",
     "Name": "Monster Magic",
     "Description": "One button, one promise: smart fixes that prove they worked.",
-    "Icon": "tools-wizard",
+    "Icon": "org.monsterlinux.magic",
     "Category": "Utilities",
     "Authors": [{ "Name": "Spongebobmc2" }],
     "License": "GPL-2.0-or-later",

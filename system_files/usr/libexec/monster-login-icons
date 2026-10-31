@@ -1,0 +1,8 @@
+#!/usr/bin/bash
+# Gives the login screen the little-monster buttons (Sleep, Restart, Shut Down, Other).
+# Only the login screen's own settings are touched; your desktop keeps its icons.
+H=$(getent passwd plasmalogin | cut -d: -f6)
+[ -n "$H" ] || exit 0
+mkdir -p "$H/.config"
+kwriteconfig6 --file "$H/.config/kdeglobals" --group Icons --key Theme Monster-Login
+chown -R plasmalogin: "$H/.config" 2>/dev/null || true

@@ -108,16 +108,26 @@ fi
 tip="ujust --choose  all commands  ·  ujust toggle-user-motd  hide this"
 (( ${#tip} + 2 <= cols )) && printf '%*s%s%s%s\n' $(( cols - ${#tip} - 1 )) '' "$K" "$tip" "$Z"
 
-# ---- divider: a thin line across the window that fades in from both sides, with a lime gem in the middle ----
-dw=$(( cols - 1 )); (( dw > 6 )) || exit 0
-mid=$(( dw / 2 )); line=""
-for ((x=0; x<dw; x++)); do
-  if (( x == mid )); then line+=$'\e[38;2;168;224;58m◆'; continue; fi
-  if (( x == mid - 1 || x == mid + 1 )); then line+=" "; continue; fi
-  d=$(( x < mid ? mid - x : x - mid ))                 # distance from the middle
-  t=$(( 1000 - d * 1000 / mid )); (( t < 0 )) && t=0    # 1000 in the middle, 0 at the edges
-  r=$(( 22 + (140 - 22) * t / 1000 )); g=$(( 30 + (194 - 30) * t / 1000 )); b=$(( 18 + (42 - 18) * t / 1000 ))
-  line+=$'\e[38;2;'"$r;$g;$b"'m─'
-done
-printf '\n%s%s\n' "$line" "$Z"
+# ---- divider: a thin line that fades in from both sides, with a little Gloop sitting in the middle ----
+dw=$(( cols - 1 )); (( dw > 20 )) || exit 0
+gap=8; lw=$(( (dw - gap) / 2 )); rw=$(( dw - gap - lw ))
+fade() {  # $1 = length, $2 = "in" (dark → lime) or "out" (lime → dark)
+  local n=$1 x t r g b out=""
+  for ((x=0; x<n; x++)); do
+    if [ "$2" = in ]; then t=$(( x * 1000 / n )); else t=$(( (n - x) * 1000 / n )); fi
+    r=$(( 22 + (140 - 22) * t / 1000 )); g=$(( 30 + (194 - 30) * t / 1000 )); b=$(( 18 + (42 - 18) * t / 1000 ))
+    out+=$'\e[38;2;'"$r;$g;$b"'m─'
+  done
+  printf '%s' "$out"
+}
+IMG=/usr/share/monster-linux/term/gloop-mini.png
+if [ -n "${KONSOLE_VERSION:-}" ] && [ -r "$IMG" ] && [ "${MONSTER_NO_IMAGES:-}" != 1 ]; then
+  # Konsole shows real pictures (iTerm2 inline image protocol): Gloop is drawn 3 rows tall over the gap
+  printf '\n%s%*s%s%s\n\n' "$(fade $lw in)" $gap '' "$(fade $rw out)" "$Z"
+  printf '\e[3A\e[%dG\e7' $(( lw + 2 ))
+  printf '\e]1337;File=inline=1;width=6;height=3;preserveAspectRatio=1:%s\a' "$(base64 -w0 "$IMG")"
+  printf '\e8\e[3B\r'
+else
+  printf '\n%s   %s◆%s    %s%s\n' "$(fade $lw in)" $'\e[38;2;168;224;58m' "$Z" "$(fade $rw out)" "$Z"
+fi
 exit 0

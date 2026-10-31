@@ -68,5 +68,23 @@ def _monster_init(self, *a, **k):
         print("Monster Portal look not applied:", e, file=sys.stderr)
 y.YaftiGTK.__init__ = _monster_init
 
+# Green button = "press this". Bazzite lights up the button for the CURRENT state, so a program
+# that isn't installed shows a green "Uninstall". Monster Linux lights up the next step instead:
+# not installed -> Install is green; already installed -> nothing is green.
+_NOT_YET = {"uninstall": "install", "disable": "enable", "disabled": "enable", "not-installed": "install", "remove": "add"}
+_orig_hl = y.YaftiGTK.option_is_highlighted
+def _monster_hl(self, option, status_token):
+    try:
+        tok = (status_token or "").strip().lower()
+        oid = (option.get("id") or "").strip().lower()
+        if tok in _NOT_YET:
+            return oid == _NOT_YET[tok]
+        if tok in ("install", "enable", "enabled", "installed", "add"):
+            return False
+    except Exception:
+        pass
+    return _orig_hl(self, option, status_token)
+y.YaftiGTK.option_is_highlighted = _monster_hl
+
 sys.argv[0] = "monster-portal"
 y.main()

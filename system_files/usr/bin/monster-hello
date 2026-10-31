@@ -107,4 +107,17 @@ else   # narrow window: buttons first, then the boxes
 fi
 tip="ujust --choose  all commands  ·  ujust toggle-user-motd  hide this"
 (( ${#tip} + 2 <= cols )) && printf '%*s%s%s%s\n' $(( cols - ${#tip} - 1 )) '' "$K" "$tip" "$Z"
+
+# ---- divider: a thin line across the window that fades in from both sides, with a lime gem in the middle ----
+dw=$(( cols - 1 )); (( dw > 6 )) || exit 0
+mid=$(( dw / 2 )); line=""
+for ((x=0; x<dw; x++)); do
+  if (( x == mid )); then line+=$'\e[38;2;168;224;58m◆'; continue; fi
+  if (( x == mid - 1 || x == mid + 1 )); then line+=" "; continue; fi
+  d=$(( x < mid ? mid - x : x - mid ))                 # distance from the middle
+  t=$(( 1000 - d * 1000 / mid )); (( t < 0 )) && t=0    # 1000 in the middle, 0 at the edges
+  r=$(( 22 + (140 - 22) * t / 1000 )); g=$(( 30 + (194 - 30) * t / 1000 )); b=$(( 18 + (42 - 18) * t / 1000 ))
+  line+=$'\e[38;2;'"$r;$g;$b"'m─'
+done
+printf '\n%s%s\n' "$line" "$Z"
 exit 0

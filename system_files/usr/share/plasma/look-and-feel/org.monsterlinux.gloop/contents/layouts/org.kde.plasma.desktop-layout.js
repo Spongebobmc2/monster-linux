@@ -12,7 +12,7 @@ var tasks = panel.addWidget("org.kde.plasma.icontasks");
 tasks.currentConfigGroup = ["General"];
 tasks.writeConfig("launchers", [
     "applications:org.kde.dolphin.desktop",
-    "applications:org.mozilla.firefox.desktop",
+    "applications:brave-browser.desktop",
     "applications:steam.desktop",
     "applications:org.kde.konsole.desktop",
     "applications:systemsettings.desktop"

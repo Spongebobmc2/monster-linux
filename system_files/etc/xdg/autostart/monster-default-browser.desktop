@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Monster default browser
+Comment=Makes Brave the default web browser (once)
+Exec=/usr/libexec/monster-default-browser
+NoDisplay=true
+X-KDE-autostart-phase=2

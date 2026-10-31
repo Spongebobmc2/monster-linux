@@ -194,3 +194,30 @@ rm -f /usr/libexec/ublue-motd.monster
 #### No window snapping: dragging a window to an edge or the top doesn't resize it or stick it there
 for k in ElectricBorderTiling ElectricBorderMaximize; do kwriteconfig6 --file /etc/xdg/kwinrc --group Windows --key $k false; done
 for k in BorderSnapZone WindowSnapZone CenterSnapZone; do kwriteconfig6 --file /etc/xdg/kwinrc --group Windows --key $k 0; done
+#### Brave: the standard web browser
+if [ -L /opt ]; then rm /opt && mkdir -p /opt; fi   # Brave installs into /opt (see the NordVPN note)
+curl -fsSL --retry 3 https://brave-browser-rpm-release.s3.brave.com/brave-browser.repo -o /etc/yum.repos.d/brave-browser.repo \
+  && rpm --import https://brave-browser-rpm-release.s3.brave.com/brave-core.asc \
+  || echo "::warning title=Brave::Couldn't add Brave's download source"
+BR_RC=0; BR_OUT=$(dnf5 install -y brave-browser 2>&1) || BR_RC=$?
+echo "$BR_OUT"
+if [ "$BR_RC" -eq 0 ] && [ -f /usr/share/applications/brave-browser.desktop ]; then
+  chmod 755 /usr/libexec/monster-default-browser
+  # new users and anything that reads the system defaults
+  mkdir -p /etc/xdg
+  cat > /etc/xdg/mimeapps.list <<'M'
+[Default Applications]
+text/html=brave-browser.desktop
+application/xhtml+xml=brave-browser.desktop
+x-scheme-handler/http=brave-browser.desktop
+x-scheme-handler/https=brave-browser.desktop
+x-scheme-handler/about=brave-browser.desktop
+x-scheme-handler/unknown=brave-browser.desktop
+M
+  cp /etc/xdg/mimeapps.list /usr/share/applications/mimeapps.list
+  kwriteconfig6 --file /etc/xdg/kdeglobals --group General --key BrowserApplication brave-browser.desktop
+  sed -i 's/^enabled=1/enabled=0/' /etc/yum.repos.d/brave-browser.repo   # updates come with Monster Linux images
+  echo "::notice title=Brave::Installed $(rpm -q brave-browser) and set as the default browser"
+else
+  echo "::warning title=Brave::$(echo "$BR_OUT" | grep -vE '^\s*$' | tail -n 5 | tr '\n' ' ' | cut -c1-800)"
+fi

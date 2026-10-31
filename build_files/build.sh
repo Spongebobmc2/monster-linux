@@ -190,3 +190,7 @@ else
   echo "::warning title=Terminal card::ublue-motd not found; card not hooked in"
 fi
 rm -f /usr/libexec/ublue-motd.monster
+
+#### No window snapping: dragging a window to an edge or the top doesn't resize it or stick it there
+for k in ElectricBorderTiling ElectricBorderMaximize; do kwriteconfig6 --file /etc/xdg/kwinrc --group Windows --key $k false; done
+for k in BorderSnapZone WindowSnapZone CenterSnapZone; do kwriteconfig6 --file /etc/xdg/kwinrc --group Windows --key $k 0; done

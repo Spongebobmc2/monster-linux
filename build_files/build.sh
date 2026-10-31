@@ -178,3 +178,6 @@ if command -v freshclam >/dev/null; then
   systemctl enable clamav-freshclam.service || true      # keeps the virus list fresh
   echo "::notice title=Monster Shield::$(rpm -q clamav clamav-update | tr '\n' ' ') · zones: $(ls /usr/lib/firewalld/zones | grep monster | tr '\n' ' ')"
 fi
+
+#### Terminal system card (top right of Konsole / Dolphin's F4 terminal). Reads each PC's own details.
+chmod 755 /usr/bin/monster-hello

@@ -1,0 +1,88 @@
+#!/usr/bin/bash
+# Monster Linux system card: shown at the top right when you open a terminal
+# (Konsole, or the terminal panel in Dolphin with F4). Run "monster-hello" any time.
+# Turn it off:  touch ~/.config/monster-hello-off      Turn it on: rm ~/.config/monster-hello-off
+CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/monster-hello"
+BOOT=$(cat /proc/sys/kernel/random/boot_id 2>/dev/null)
+
+collect() {
+  r() { [ -r "/sys/class/dmi/id/$1" ] || return 0; tr -d '\0' < "/sys/class/dmi/id/$1" 2>/dev/null | sed 's/[[:space:]]*$//'; }
+  vendor=$(r sys_vendor); product=$(r product_name); board=$(r board_name); bios=$(r bios_version)
+  case "$vendor" in ASUSTeK*|ASUS*) vendor=ASUS;; "Micro-Star"*) vendor=MSI;; "Gigabyte"*|"GIGABYTE"*) vendor=Gigabyte;; "Dell"*) vendor=Dell;; "LENOVO") vendor=Lenovo;; "HP"|"Hewlett"*) vendor=HP;; "To Be Filled"*|"System manufacturer"|"Default string") vendor="";; esac
+  case "$product" in "To Be Filled"*|"System Product Name"|"Default string") product="";; esac
+  product=$(printf '%s' "$product" | sed -E 's/\.[0-9]+$//')        # "ROG G22CH.414" -> "ROG G22CH"
+  pc=$(printf '%s %s' "$vendor" "$product" | sed 's/^ *//')
+  cpu=$(sed -n 's/^model name[[:space:]]*: //p' /proc/cpuinfo | head -n1 | sed -E 's/\((R|TM)\)//g; s/[0-9]+th Gen //; s/ CPU//; s/ @.*//; s/ +Processor//; s/  +/ /g')
+  thr=$(nproc 2>/dev/null)
+  kb=$(sed -n 's/^MemTotal: *\([0-9]*\).*/\1/p' /proc/meminfo)
+  ram=$(( (kb + 2*1024*1024 - 1) / (2*1024*1024) * 2 ))
+  gpu=""
+  if command -v nvidia-smi >/dev/null; then
+    gpu=$(nvidia-smi --query-gpu=name,memory.total --format=csv,noheader,nounits 2>/dev/null | head -n1 | awk -F', ' '{ printf "%s · %d GB", $1, ($2+512)/1024 }')
+  fi
+  if [ -z "$gpu" ]; then
+    gpu=$(lspci -mm 2>/dev/null | grep -E '"(VGA compatible controller|3D controller|Display controller)"' | head -n1 | awk -F'"' '{print $4" "$6}' | sed -E 's/Advanced Micro Devices, Inc\. \[AMD\/ATI\]/AMD/; s/NVIDIA Corporation/NVIDIA/; s/Intel Corporation/Intel/; s/.*\[(.*)\]/\1/')
+  fi
+  . /usr/lib/os-release
+  sys="${NAME:-Linux} ${VERSION%% *}"
+  base=""
+  [ -f /usr/share/ublue-os/image-info.json ] && base=$(sed -n 's/.*"image-name": *"\([^"]*\)".*/\1/p' /usr/share/ublue-os/image-info.json | head -n1)
+  kern=$(uname -r | sed 's/\.x86_64$//')
+  {
+    echo "BOOT=$BOOT"
+    printf 'PC=%q\nBOARD=%q\nBIOS=%q\nCPU=%q\nTHR=%q\nRAM=%q\nGPU=%q\nSYS=%q\nBASE=%q\nKERN=%q\n' "$pc" "$board" "$bios" "$cpu" "$thr" "$ram" "$gpu" "$sys" "$base" "$kern"
+  } > "$CACHE.tmp" && mv "$CACHE.tmp" "$CACHE"
+}
+
+mkdir -p "${CACHE%/*}"
+if [ ! -f "$CACHE" ] || ! grep -qx "BOOT=$BOOT" "$CACHE" || [ "${1:-}" = "--refresh" ]; then collect; fi
+. "$CACHE"
+
+# ---- draw ----
+L=$'\e[38;2;168;224;58m'; D=$'\e[38;2;63;122;14m'; F=$'\e[38;2;104;150;44m'; K=$'\e[38;2;138;152;120m'; W=$'\e[38;2;232;238;224m'; B=$'\e[1m'; Z=$'\e[0m'
+rows=()
+[ -n "$PC" ]    && rows+=("PC|$PC")
+[ -n "$BOARD" ] && rows+=("Board|$BOARD${BIOS:+ · BIOS $BIOS}")
+[ -n "$CPU" ]   && rows+=("CPU|$CPU${THR:+ · $THR threads}")
+[ -n "$GPU" ]   && rows+=("Graphics|$GPU")
+[ -n "$RAM" ]   && rows+=("Memory|$RAM GB")
+rows+=("System|$SYS")
+[ -n "$BASE" ]  && rows+=("Base|$BASE")
+rows+=("Kernel|$KERN")
+
+# Gloop, drawn with half blocks (7 rows, 12 columns each)
+G=$'\e[48;2;140;194;42m'   # lime behind the eye and mouth
+E=$'\e[38;2;246;255;224m'  # eye white
+art=(
+"   ${L}▄████▄${Z}   "
+"  ${L}▄█${G}${E}▄██▄${Z}${L}█▄${Z}  "
+" ${L}███${E}█${D}██${E}█${L}███${Z} "
+" ${L}███${G}${E}▀██▀${Z}${L}███${Z} "
+" ${L}███${G}${D}╰──╯${Z}${L}███${Z} "
+" ${L}██████████${Z} "
+" ${L}▀▄▀▄▀▄▀▄▀▄${Z} "
+)
+artw=12
+
+maxv=0; for r in "${rows[@]}"; do v=${r#*|}; [ ${#v} -gt $maxv ] && maxv=${#v}; done
+inner=$(( artw + 2 + 9 + maxv + 1 ))
+cols=$(tput cols 2>/dev/null || echo 80)
+width=$(( inner + 2 ))
+pad=$(( cols - width - 1 )); [ $pad -lt 0 ] && pad=0
+# narrow window: no Gloop
+if [ $(( width + 2 )) -gt "$cols" ]; then artw=0; art=(); inner=$(( 9 + maxv + 3 )); width=$(( inner + 2 )); pad=$(( cols - width - 1 )); [ $pad -lt 0 ] && pad=0; fi
+sp=$(printf '%*s' "$pad" '')
+title=" MONSTER LINUX "
+line() { printf '%s%s%s%s\n' "$sp" "$1" "$2" "$Z"; }
+rep() { local s=""; for ((i=0;i<$2;i++)); do s+="$1"; done; printf '%s' "$s"; }
+
+n=${#rows[@]}; h=$(( n > ${#art[@]} ? n : ${#art[@]} ))
+line "$F╭─$L$B$title$Z$F" "$(rep ─ $(( inner - ${#title} - 1 )))╮"
+for ((i=0;i<h;i++)); do
+  a="${art[$i]:-}"; [ $artw -gt 0 ] && [ -z "$a" ] && a=$(printf '%*s' $artw '')
+  r="${rows[$i]:-}"
+  if [ -n "$r" ]; then k=${r%%|*}; v=${r#*|}; cell="${K}${k}$(printf '%*s' $(( 9 - ${#k} )) '')${W}${v}$(printf '%*s' $(( maxv - ${#v} )) '')"
+  else cell=$(printf '%*s' $(( 9 + maxv )) ''); fi
+  if [ $artw -gt 0 ]; then line "$F│$Z" "$a  $cell $F│"; else line "$F│$Z " "$cell  $F│"; fi
+done
+line "$F╰" "$(rep ─ "$inner")╯"

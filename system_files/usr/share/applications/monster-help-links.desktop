@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Monster terminal guides
+NoDisplay=true
+Exec=/usr/bin/monster-help open %u
+MimeType=x-scheme-handler/monster-help;

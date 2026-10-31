@@ -181,7 +181,15 @@ fi
 
 #### Terminal system card (top right of Konsole / Dolphin's F4 terminal). Reads each PC's own details.
 # It takes the place of Bazzite's welcome banner (same on/off switch: ujust toggle-user-motd).
-chmod 755 /usr/bin/monster-hello
+chmod 755 /usr/bin/monster-hello /usr/bin/monster-help
+# terminal buttons are links (monster-help://...): open them with one click, show them underlined
+P=/usr/share/konsole/MonsterGloop.profile
+if [ -f "$P" ]; then
+  kwriteconfig6 --file "$P" --group "Interaction Options" --key OpenLinksByDirectClickEnabled true
+  kwriteconfig6 --file "$P" --group "Interaction Options" --key UnderlineLinksEnabled true
+  kwriteconfig6 --file "$P" --group "Interaction Options" --key AllowEscapedLinks true
+  kwriteconfig6 --file "$P" --group "Interaction Options" --key EscapedLinksSchema "http://;https://;file://;monster-help://"
+fi
 if [ -f /usr/libexec/ublue-motd ]; then
   mv /usr/libexec/ublue-motd /usr/libexec/ublue-motd.bazzite
   install -m 755 /usr/libexec/ublue-motd.monster /usr/libexec/ublue-motd
@@ -221,3 +229,13 @@ M
 else
   echo "::warning title=Brave::$(echo "$BR_OUT" | grep -vE '^\s*$' | tail -n 5 | tr '\n' ' ' | cut -c1-800)"
 fi
+
+#### Last step: terminal guide links (monster-help://) open the Monster guides.
+# (kept at the end so the browser defaults above can't overwrite it)
+for f in /etc/xdg/mimeapps.list /usr/share/applications/mimeapps.list; do
+  [ -f "$f" ] || printf '[Default Applications]\n' > "$f"
+  grep -q '^\[Default Applications\]' "$f" || printf '[Default Applications]\n' >> "$f"
+  grep -q 'x-scheme-handler/monster-help' "$f" || sed -i '/^\[Default Applications\]/a x-scheme-handler/monster-help=monster-help-links.desktop' "$f"
+done
+update-desktop-database /usr/share/applications >/dev/null 2>&1 || true
+echo "::notice title=Terminal buttons::$(grep -h monster-help /etc/xdg/mimeapps.list) · Konsole links: $(grep -c EscapedLinks /usr/share/konsole/MonsterGloop.profile 2>/dev/null)"

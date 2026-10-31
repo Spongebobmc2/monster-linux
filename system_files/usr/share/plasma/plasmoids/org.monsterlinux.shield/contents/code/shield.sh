@@ -14,30 +14,25 @@ status)
   db=0; for f in /var/lib/clamav/daily.cld /var/lib/clamav/daily.cvd; do [ -f "$f" ] && db=$(stat -c %Y "$f"); done
   daily=no; systemctl --user is-enabled -q monster-shield-scan.timer 2>/dev/null && daily=yes
   last=$(cat "$S/last.json" 2>/dev/null || echo null)
+  lastscan=$(python3 -c 'import json,sys
+t=0
+for f in sys.argv[1:]:
+  try: t=max(t,int(json.load(open(f)).get("at",0)))
+  except Exception: pass
+print(t)' "$S/last.json" "$S/daily.json" "$S/last-run.json")
   qn=$(find "$Q" -type f 2>/dev/null | wc -l)
-  printf '{"fw":"%s","zone":"%s","clam":"%s","db":%s,"daily":"%s","last":%s,"quarantined":%s}\n' "$fw" "$zone" "$clam" "$db" "$daily" "$last" "$qn" ;;
+  printf '{"fw":"%s","zone":"%s","clam":"%s","db":%s,"daily":"%s","last":%s,"quarantined":%s,"lastscan":%s}\n' "$fw" "$zone" "$clam" "$db" "$daily" "$last" "$qn" "${lastscan:-0}" ;;
 
 fw-on)
-  pkexec systemctl enable --now firewalld >/dev/null 2>&1 && ok "Firewall is on" || fail "Firewall not changed" ;;
+  pkexec /usr/libexec/monster-root fw-on ;;
 fw-off)
   pkexec systemctl disable --now firewalld >/dev/null 2>&1 && ok "Firewall is off" || fail "Firewall not changed" ;;
 fw-zone)
-  Z="monster-$2"; case "$2" in home|public) ;; *) fail "Unknown place"; exit 0;; esac
-  pkexec bash -c '
-    Z="$1"
-    systemctl enable --now firewalld >/dev/null 2>&1
-    firewall-cmd --reload >/dev/null 2>&1
-    firewall-cmd --set-default-zone="$Z" >/dev/null || exit 1
-    nmcli -g UUID,TYPE,DEVICE con show --active | while IFS=: read -r u t d; do
-      case "$t" in loopback|bridge|tun|wireguard) continue;; esac
-      nmcli con mod "$u" connection.zone "$Z" >/dev/null 2>&1
-      [ -n "$d" ] && firewall-cmd --zone="$Z" --change-interface="$d" >/dev/null 2>&1
-    done
-    exit 0' _ "$Z" && ok "Firewall set to $2" || fail "Firewall not changed" ;;
+  case "$2" in home|public) pkexec /usr/libexec/monster-root fw-zone "$2" ;; *) fail "Unknown place" ;; esac ;;
 
 update-db)
   command -v freshclam >/dev/null || { fail "Virus check is not installed"; exit 0; }
-  pkexec freshclam --quiet >/dev/null 2>&1 && ok "Virus list updated" || fail "Couldn't update the virus list. Check the internet and try again" ;;
+  pkexec /usr/libexec/monster-root freshclam ;;
 
 scan)
   command -v clamscan >/dev/null || { echo "MISSING"; exit 0; }
@@ -56,7 +51,8 @@ scan)
 #!/usr/bin/bash
 echo "TOTAL \$(find "\$@" -type f 2>/dev/null | wc -l)" >> "$LOG"
 clamscan -r --stdout --no-summary $EXC "\$@" >> "$LOG" 2>/dev/null
-echo "DONE \$?" >> "$LOG"
+rc=\$?; echo "DONE \$rc" >> "$LOG"
+printf '{"at":%s,"kind":"%s"}\n' "\$(date +%s)" "$2" > "$S/last-run.json"
 R
   setsid bash "$S/run.sh" "${existing[@]}" </dev/null >/dev/null 2>&1 &
   echo $! > "$PIDF"

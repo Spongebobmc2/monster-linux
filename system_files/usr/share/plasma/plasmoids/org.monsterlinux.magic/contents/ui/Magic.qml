@@ -98,7 +98,7 @@ Rectangle {
             else if (k === "FIX") {
                 const p = t.split("|"), fx = { id: p[0], label: p[1] || "Fix it", what: p[2] || "" }
                 for (let i = F.length - 1; i >= 0; i--) if (F[i].k !== "OK") { if (!F[i].fix) F[i].fix = fx; break }
-            } else F.push({ k: k, t: t, fix: null, done: "", src: src || "" })
+            } else { const i = t.indexOf("|"); F.push({ k: k, t: i >= 0 ? t.slice(0, i) : t, info: i >= 0 ? t.slice(i + 1) : "", fix: null, done: "", src: src || "" }) }
         })
         return { findings: F, steps: S, plan: P, proof: pr }
     }
@@ -196,31 +196,31 @@ Rectangle {
 
         // ======================= SIDEBAR =======================
         Rectangle {
-            Layout.preferredWidth: 318; Layout.fillHeight: true
+            Layout.preferredWidth: 268; Layout.fillHeight: true
             color: "white"
             Rectangle { anchors.right: parent.right; width: 1; height: parent.height; color: magic.edge }
             ColumnLayout {
                 anchors.fill: parent; spacing: 0
                 // brand + score
                 Rectangle {
-                    Layout.fillWidth: true; implicitHeight: brandCol.implicitHeight + 40
+                    Layout.fillWidth: true; implicitHeight: brandCol.implicitHeight + 28
                     gradient: Gradient { orientation: Gradient.Vertical
                         GradientStop { position: 0; color: "#a6d83c" } GradientStop { position: 1; color: "#82b822" } }
                     ColumnLayout {
                         id: brandCol
-                        anchors.left: parent.left; anchors.right: parent.right; anchors.top: parent.top; anchors.margins: 20; spacing: 14
+                        anchors.left: parent.left; anchors.right: parent.right; anchors.top: parent.top; anchors.margins: 14; spacing: 10
                         RowLayout {
                             spacing: 12
-                            Image { source: "../images/magic.png"; Layout.preferredWidth: 52; Layout.preferredHeight: 52; fillMode: Image.PreserveAspectFit; smooth: true; mipmap: true }
+                            Image { source: "../images/magic.png"; Layout.preferredWidth: 40; Layout.preferredHeight: 40; fillMode: Image.PreserveAspectFit; smooth: true; mipmap: true }
                             ColumnLayout { spacing: 1
-                                Text { text: "Monster Magic"; font.family: magic.head; font.weight: Font.ExtraBold; font.pixelSize: 20; color: "#13200a" }
-                                Text { text: "One button. Real fixes. Proof."; font.family: magic.body; font.pixelSize: 12; color: "#25380f" } }
+                                Text { text: "Monster Magic"; font.family: magic.head; font.weight: Font.ExtraBold; font.pixelSize: 17; color: "#13200a" }
+                                Text { text: "One button. Real fixes. Proof."; font.family: magic.body; font.pixelSize: 11; color: "#25380f" } }
                         }
                         Rectangle {
-                            Layout.fillWidth: true; radius: 14; color: Qt.rgba(1, 1, 1, .55); implicitHeight: scoreCol.implicitHeight + 24
+                            Layout.fillWidth: true; radius: 12; color: Qt.rgba(1, 1, 1, .55); implicitHeight: scoreCol.implicitHeight + 16
                             ColumnLayout {
                                 id: scoreCol
-                                anchors.left: parent.left; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; anchors.margins: 12; spacing: 10
+                                anchors.left: parent.left; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; anchors.margins: 10; spacing: 8
                                 RowLayout {
                                     spacing: 12
                                     Item {
@@ -272,17 +272,17 @@ Rectangle {
                                 Text {
                                     visible: nrow.index === 0 || magic.buttons[nrow.index - 1][4] !== nrow.modelData[4]
                                     text: nrow.modelData[4].toUpperCase(); font.family: magic.body; font.pixelSize: 10; font.bold: true; font.letterSpacing: 1.6; color: "#7c8a6c"
-                                    Layout.leftMargin: 22; Layout.topMargin: 10; Layout.bottomMargin: 4
+                                    Layout.leftMargin: 18; Layout.topMargin: 6; Layout.bottomMargin: 2
                                 }
                                 Rectangle {
-                                    Layout.fillWidth: true; Layout.leftMargin: 12; Layout.rightMargin: 12
-                                    implicitHeight: 46; radius: 12
+                                    Layout.fillWidth: true; Layout.leftMargin: 10; Layout.rightMargin: 10
+                                    implicitHeight: 38; radius: 10
                                     color: nrow.on ? "#eef7dc" : (nma.containsMouse ? "#f7fbef" : "transparent")
                                     border.width: nrow.on ? 1.5 : 0; border.color: magic.deep
                                     RowLayout {
                                         anchors.fill: parent; anchors.leftMargin: 8; anchors.rightMargin: 10; spacing: 10
-                                        Icon { path: nrow.modelData[3]; on: nrow.on; size: 32 }
-                                        Text { Layout.fillWidth: true; text: nrow.modelData[1]; font.family: magic.body; font.pixelSize: 13; font.weight: Font.DemiBold; color: magic.ink; elide: Text.ElideRight }
+                                        Icon { path: nrow.modelData[3]; on: nrow.on; size: 28 }
+                                        Text { Layout.fillWidth: true; text: nrow.modelData[1]; font.family: magic.body; font.pixelSize: 12; font.weight: Font.DemiBold; color: magic.ink; elide: Text.ElideRight }
                                         Chip { tone: nrow.chip ? nrow.chip.tone : ""; label: nrow.chip ? nrow.chip.text : "Not run" }
                                     }
                                     MouseArea { id: nma; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: magic.select(nrow.modelData) }
@@ -309,15 +309,15 @@ Rectangle {
                 // hero
                 Card {
                     Layout.fillWidth: true; Layout.leftMargin: 24; Layout.rightMargin: 24
-                    implicitHeight: heroRow.implicitHeight + 40
+                    implicitHeight: heroRow.implicitHeight + 30
                     RowLayout {
                         id: heroRow
-                        anchors.left: parent.left; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; anchors.margins: 20; spacing: 18
+                        anchors.left: parent.left; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; anchors.margins: 16; spacing: 16
                         Rectangle {
-                            Layout.preferredWidth: 64; Layout.preferredHeight: 64; radius: 18
+                            Layout.preferredWidth: 52; Layout.preferredHeight: 52; radius: 15
                             gradient: Gradient { GradientStop { position: 0; color: "#4f9212" } GradientStop { position: 1; color: "#2f6208" } }
                             Canvas {
-                                anchors.fill: parent; anchors.margins: 14
+                                anchors.fill: parent; anchors.margins: 12
                                 property string p: magic.sel[3]
                                 onPChanged: requestPaint()
                                 onPaint: { const g = getContext("2d"); g.reset(); g.scale(width / 64, height / 64); g.lineWidth = 4.5; g.lineCap = "round"; g.lineJoin = "round"; g.strokeStyle = "#ffffff"; g.path = p; g.stroke() }
@@ -325,7 +325,7 @@ Rectangle {
                         }
                         ColumnLayout {
                             Layout.fillWidth: true; spacing: 5
-                            Text { text: magic.sel[1]; font.family: magic.head; font.weight: Font.ExtraBold; font.pixelSize: 22; color: magic.ink; Layout.fillWidth: true; elide: Text.ElideRight }
+                            Text { text: magic.sel[1]; font.family: magic.head; font.weight: Font.ExtraBold; font.pixelSize: 19; color: magic.ink; Layout.fillWidth: true; elide: Text.ElideRight }
                             Text { text: magic.sel[2]; font.family: magic.body; font.pixelSize: 13; color: magic.dim; wrapMode: Text.Wrap; Layout.fillWidth: true }
                             RowLayout {
                                 visible: magic.sel[0] !== "all"
@@ -419,7 +419,8 @@ Rectangle {
                                         Layout.fillWidth: true; spacing: 2
                                         Text { visible: ar.f.src !== ""; text: ar.f.src.toUpperCase(); font.family: magic.body; font.pixelSize: 10; font.bold: true; font.letterSpacing: 1.2; color: "#7c8a6c" }
                                         Text { text: (ar.f.k === "TIP" ? "Recommended: " : "") + ar.f.t; font.family: magic.body; font.pixelSize: 14; font.bold: ar.f.k !== "TIP"; color: magic.ink; wrapMode: Text.Wrap; Layout.fillWidth: true }
-                                        Text { visible: !!ar.f.fix; text: ar.f.fix ? ar.f.fix.what : ""; font.family: magic.body; font.pixelSize: 12; color: magic.dim; wrapMode: Text.Wrap; Layout.fillWidth: true }
+                                        Text { visible: !!ar.f.info; text: ar.f.info || ""; font.family: magic.body; font.pixelSize: 12; color: magic.dim; wrapMode: Text.Wrap; Layout.fillWidth: true }
+                                        Text { visible: !!ar.f.fix; text: ar.f.fix ? "Fix: " + ar.f.fix.what : ""; font.family: magic.body; font.pixelSize: 11; color: magic.deep; wrapMode: Text.Wrap; Layout.fillWidth: true }
                                     }
                                     Pill {
                                         visible: !!ar.f.fix
@@ -451,7 +452,9 @@ Rectangle {
                                     Layout.fillWidth: true; Layout.preferredWidth: 1; spacing: 10
                                     Rectangle { Layout.preferredWidth: 20; Layout.preferredHeight: 20; radius: 10; color: magic.good; Layout.alignment: Qt.AlignTop
                                         Text { anchors.centerIn: parent; text: "✓"; color: "white"; font.bold: true; font.pixelSize: 10 } }
-                                    Text { Layout.fillWidth: true; text: modelData.done ? modelData.t + " → fixed" : modelData.t; font.family: magic.body; font.pixelSize: 13; color: magic.ink; wrapMode: Text.Wrap }
+                                    ColumnLayout { Layout.fillWidth: true; spacing: 1
+                                        Text { Layout.fillWidth: true; text: modelData.done ? modelData.t + " → fixed" : modelData.t; font.family: magic.body; font.pixelSize: 12; color: magic.ink; wrapMode: Text.Wrap }
+                                        Text { Layout.fillWidth: true; visible: !!(modelData.done || modelData.info); text: modelData.done || modelData.info || ""; font.family: magic.body; font.pixelSize: 11; color: magic.dim; wrapMode: Text.Wrap } }
                                 }
                             }
                         }
@@ -508,10 +511,10 @@ Rectangle {
         property int number: 0
         property string label
         property color tone
-        Layout.fillWidth: true; Layout.preferredWidth: 1; implicitHeight: 70; radius: 18; color: "white"; border.color: "#e3ecd3"
+        Layout.fillWidth: true; Layout.preferredWidth: 1; implicitHeight: 58; radius: 16; color: "white"; border.color: "#e3ecd3"
         RowLayout {
             anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 12; spacing: 12
-            Text { text: st.number; font.family: "Unbounded"; font.weight: Font.ExtraBold; font.pixelSize: 28; color: st.number ? st.tone : "#b8c2ab" }
+            Text { text: st.number; font.family: "Unbounded"; font.weight: Font.ExtraBold; font.pixelSize: 24; color: st.number ? st.tone : "#b8c2ab" }
             Text { text: st.label; font.family: "Sora"; font.pixelSize: 12; color: "#5d6b50"; Layout.fillWidth: true }
         }
     }

@@ -30,7 +30,8 @@ Rectangle {
     readonly property bool fwOn: s.fw === "on"
     readonly property string place: s.zone === "monster-home" ? "home" : s.zone === "monster-public" ? "public" : ""
     readonly property bool dbOk: s.db > 0 && (Date.now() / 1000 - s.db) < 8 * 86400
-    readonly property bool allGood: fwOn && place !== "" && s.clam === "yes" && dbOk && !(scan.found && scan.found.length)
+    readonly property bool scannedRecently: (s.lastscan || 0) > 0 && (Date.now() / 1000 - s.lastscan) < 7 * 86400
+    readonly property bool allGood: fwOn && place !== "" && s.clam === "yes" && dbOk && scannedRecently && !(scan.found && scan.found.length)
 
     // ---- helper runner ----
     property int runId: 0
@@ -174,7 +175,7 @@ Rectangle {
                         Text { text: "Virus check"; font.family: sh.head; font.weight: Font.ExtraBold; font.pixelSize: 18; color: sh.ink }
                         Text {
                             text: sh.s.clam !== "yes" ? "Not installed yet. It comes with the next update." :
-                                  "Virus list: " + (sh.s.db ? "updated " + sh.ago(sh.s.db) : "not downloaded yet") + "   ·   Last check: " + (sh.s.last ? sh.ago(sh.s.last.at) : "never")
+                                  "Virus list: " + (sh.s.db ? "updated " + sh.ago(sh.s.db) : "not downloaded yet") + "   ·   Last check: " + (sh.s.lastscan ? sh.ago(sh.s.lastscan) : "never")
                             font.family: sh.body; font.pixelSize: 12; color: (sh.s.clam === "yes" && sh.dbOk) ? sh.dim : sh.warn; wrapMode: Text.Wrap; Layout.fillWidth: true
                         }
                     }
@@ -258,7 +259,7 @@ Rectangle {
             Rectangle { width: parent.width; height: 1; color: sh.edge }
             Text {
                 anchors.verticalCenter: parent.verticalCenter; anchors.left: parent.left; anchors.leftMargin: 24
-                text: sh.note || (sh.fwBusy ? "Changing the firewall…" : "Your password is asked for when a setting needs it.")
+                text: sh.note || (sh.fwBusy ? "Changing the firewall…" : "No password needed for scans or Home/Public. Turning the firewall off asks for it.")
                 font.family: sh.body; font.pixelSize: 12; color: sh.dim
             }
         }

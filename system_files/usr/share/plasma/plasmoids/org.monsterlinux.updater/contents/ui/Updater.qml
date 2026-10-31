@@ -117,7 +117,7 @@ Rectangle {
                 ColumnLayout {
                     Layout.fillWidth: true; spacing: 2
                     Text { text: "Monster Updater"; font.family: up.head; font.weight: Font.ExtraBold; font.pixelSize: 21; color: "#14200a" }
-                    Text { text: "System, drivers, apps. One button."; font.family: up.body; font.pixelSize: 12.5; color: "#24360f" }
+                    Text { text: "System, drivers, apps. One button."; font.family: up.body; font.pixelSize: 13; color: "#24360f" }
                 }
                 Rectangle {
                     visible: up.version !== ""
@@ -222,8 +222,8 @@ Rectangle {
                                 }
                                 ColumnLayout {
                                     Layout.fillWidth: true; spacing: 1
-                                    Text { text: modelData[1]; font.family: up.body; font.pixelSize: 13.5; font.weight: Font.DemiBold; color: s === "skip" ? up.dim : up.ink }
-                                    Text { text: modelData[2]; font.family: up.body; font.pixelSize: 11.5; color: up.dim; elide: Text.ElideRight; Layout.fillWidth: true }
+                                    Text { text: modelData[1]; font.family: up.body; font.pixelSize: 14; font.weight: Font.DemiBold; color: s === "skip" ? up.dim : up.ink }
+                                    Text { text: modelData[2]; font.family: up.body; font.pixelSize: 12; color: up.dim; elide: Text.ElideRight; Layout.fillWidth: true }
                                 }
                                 Rectangle {
                                     radius: 10; implicitHeight: 22; implicitWidth: chip.implicitWidth + 16
@@ -249,7 +249,7 @@ Rectangle {
                 Text {
                     Layout.fillWidth: true
                     text: up.phase === "running" ? "You can close this window. Updating keeps going." : ""
-                    font.family: up.body; font.pixelSize: 11.5; color: up.dim; wrapMode: Text.Wrap
+                    font.family: up.body; font.pixelSize: 12; color: up.dim; wrapMode: Text.Wrap
                 }
                 Pill { label: "Restart to finish"; primary: true; visible: up.phase === "done" && up.staged; onClicked: up.run(["restart"]) }
                 Pill { label: up.phase === "failed" ? "Try again" : "Update now"; primary: true; visible: up.phase === "idle" || up.phase === "failed"; onClicked: up.startUpdate() }

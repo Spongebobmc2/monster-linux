@@ -99,7 +99,7 @@ Rectangle {
                 ColumnLayout {
                     Layout.fillWidth: true; spacing: 2
                     Text { text: "Monster Shield"; font.family: sh.head; font.weight: Font.ExtraBold; font.pixelSize: 22; color: "#14200a" }
-                    Text { text: "Firewall and virus check. One click each."; font.family: sh.body; font.pixelSize: 12.5; color: "#24360f" }
+                    Text { text: "Firewall and virus check. One click each."; font.family: sh.body; font.pixelSize: 13; color: "#24360f" }
                 }
                 Rectangle {
                     radius: height / 2; implicitHeight: 34; implicitWidth: stT.implicitWidth + 44
@@ -159,7 +159,7 @@ Rectangle {
                     Text {
                         visible: sh.fwOn && sh.place === ""
                         text: "Pick Home or Public so Monster Shield knows how careful to be."
-                        font.family: sh.body; font.pixelSize: 11.5; color: sh.warn; wrapMode: Text.Wrap; Layout.fillWidth: true
+                        font.family: sh.body; font.pixelSize: 12; color: sh.warn; wrapMode: Text.Wrap; Layout.fillWidth: true
                     }
                 }
             }
@@ -212,14 +212,14 @@ Rectangle {
                                 delegate: ColumnLayout {
                                     required property var modelData
                                     width: ListView.view.width; spacing: 0
-                                    Text { text: modelData.file.split("/").pop(); font.family: sh.body; font.pixelSize: 12.5; font.bold: true; color: sh.ink; elide: Text.ElideMiddle; Layout.fillWidth: true }
-                                    Text { text: modelData.virus + "  ·  " + modelData.file; font.family: sh.body; font.pixelSize: 10.5; color: sh.dim; elide: Text.ElideMiddle; Layout.fillWidth: true }
+                                    Text { text: modelData.file.split("/").pop(); font.family: sh.body; font.pixelSize: 13; font.bold: true; color: sh.ink; elide: Text.ElideMiddle; Layout.fillWidth: true }
+                                    Text { text: modelData.virus + "  ·  " + modelData.file; font.family: sh.body; font.pixelSize: 11; color: sh.dim; elide: Text.ElideMiddle; Layout.fillWidth: true }
                                 }
                             }
                             RowLayout {
                                 visible: !sh.scan.running && sh.scan.found && sh.scan.found.length > 0
                                 Layout.fillWidth: true
-                                Text { Layout.fillWidth: true; wrapMode: Text.Wrap; text: "Lock them away so they can't run. You can look at them later."; font.family: sh.body; font.pixelSize: 11.5; color: sh.dim }
+                                Text { Layout.fillWidth: true; wrapMode: Text.Wrap; text: "Lock them away so they can't run. You can look at them later."; font.family: sh.body; font.pixelSize: 12; color: sh.dim }
                                 Pill { label: "Lock them away"; danger: true; onClicked: sh.run(["quarantine"], o => { sh.note = "Bad files locked away"; sh.pollScan(); sh.refresh() }) }
                             }
                             Item { visible: !(sh.scan.found && sh.scan.found.length); Layout.fillHeight: true }
@@ -235,7 +235,7 @@ Rectangle {
                     RowLayout {
                         Layout.fillWidth: true; spacing: 10
                         Toggle { on: sh.s.daily === "yes"; onToggled: sh.run([sh.s.daily === "yes" ? "daily-off" : "daily-on"], o => { sh.note = sh.lastLine(o); sh.refresh() }) }
-                        Text { Layout.fillWidth: true; text: "Check Downloads every day"; font.family: sh.body; font.pixelSize: 12.5; color: sh.ink }
+                        Text { Layout.fillWidth: true; text: "Check Downloads every day"; font.family: sh.body; font.pixelSize: 13; color: sh.ink }
                         Text {
                             text: sh.dbBusy ? "Updating…" : "Update virus list"
                             font.family: sh.body; font.pixelSize: 12; font.underline: true; color: sh.deep
@@ -259,7 +259,7 @@ Rectangle {
             Text {
                 anchors.verticalCenter: parent.verticalCenter; anchors.left: parent.left; anchors.leftMargin: 24
                 text: sh.note || (sh.fwBusy ? "Changing the firewall…" : "Your password is asked for when a setting needs it.")
-                font.family: sh.body; font.pixelSize: 11.5; color: sh.dim
+                font.family: sh.body; font.pixelSize: 12; color: sh.dim
             }
         }
     }
@@ -334,10 +334,10 @@ Rectangle {
                     Text { text: pt2.title; font.family: "Unbounded"; font.weight: Font.ExtraBold; font.pixelSize: 16; color: "#1b2610" }
                     Rectangle {
                         radius: 9; implicitHeight: 20; implicitWidth: tagT.implicitWidth + 14; color: "#e3f3c4"
-                        Text { id: tagT; anchors.centerIn: parent; text: pt2.tag; font.family: "Sora"; font.pixelSize: 10.5; font.bold: true; color: "#3f7a0e" }
+                        Text { id: tagT; anchors.centerIn: parent; text: pt2.tag; font.family: "Sora"; font.pixelSize: 11; font.bold: true; color: "#3f7a0e" }
                     }
                 }
-                Text { Layout.fillWidth: true; text: pt2.text; wrapMode: Text.Wrap; font.family: "Sora"; font.pixelSize: 11.5; color: "#5f6d52" }
+                Text { Layout.fillWidth: true; text: pt2.text; wrapMode: Text.Wrap; font.family: "Sora"; font.pixelSize: 12; color: "#5f6d52" }
             }
             Rectangle {
                 Layout.preferredWidth: 24; Layout.preferredHeight: 24; radius: 12

@@ -1,0 +1,11 @@
+#!/usr/bin/bash
+# Small one-time repairs for each user after a Monster Linux update (runs at login).
+# Step 1: Monster apps (Portal and its pop-ups) stay solid, never see-through.
+RX='^(?!steam_app|steam|gamescope|xwaylandvideobridge|plasmawindowed|.*plasmawindowed|io\.github\.ublue_os\.yafti_gtk|.*yafti.*|org\.monsterlinux\..*|.*\.exe).*'
+if [ "$(kreadconfig6 --file kwinrulesrc --group monster-glass --key Description)" != "" ] \
+   && [ "$(kreadconfig6 --file kwinrulesrc --group monster-glass --key wmclass)" != "$RX" ]; then
+  kwriteconfig6 --file kwinrulesrc --group monster-glass --key wmclass "$RX"
+  Q=$(command -v qdbus6 || command -v qdbus || true)
+  [ -n "$Q" ] && $Q org.kde.KWin /KWin reconfigure >/dev/null 2>&1
+fi
+exit 0

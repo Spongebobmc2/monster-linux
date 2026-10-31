@@ -88,7 +88,7 @@ for f in $(grep -lis "^\(Name\|GenericName\|Comment\|Keywords\)\(\[[^]]*\]\)\?=.
   sed -i -E '/^(Name|GenericName|Comment|Keywords|X-GNOME-FullName)(\[[^]]*\])?=/ s/Bazzite/Monster Linux/g; /^(Name|GenericName|Comment|Keywords)(\[[^]]*\])?=/ s/bazzite/monster/g' "$f"
   RENAMED="$RENAMED $(basename "$f"): $(grep -m1 '^Name=' "$f" | cut -d= -f2) ·"
 done
-[ -f /usr/share/yafti/yafti.yml ] && sed -i 's/^title: Bazzite Portal/title: Monster Portal/' /usr/share/yafti/yafti.yml
+[ -f /usr/share/yafti/yafti.yml ] && sed -i -E 's/^title: Bazzite Portal/title: Monster Portal/; /^  - title:/ s/Bazzite/Monster Linux/g' /usr/share/yafti/yafti.yml
 sed -i 's/Monster Linux Portal/Monster Portal/g' $(grep -lis "Monster Linux Portal" /usr/share/applications/*.desktop /etc/xdg/autostart/*.desktop /etc/skel/.config/autostart/*.desktop 2>/dev/null) 2>/dev/null || true
 echo "::notice title=Renamed apps::${RENAMED:-none found}"
 echo "::notice title=Update apps in menu::$(grep -lis "^Name=.*updat" /usr/share/applications/*.desktop 2>/dev/null | while read f; do printf "%s=%s · " "$(basename "$f")" "$(grep -m1 "^Name=" "$f" | cut -d= -f2)"; done)"
@@ -143,7 +143,7 @@ fi
 
 #### Monster Portal + Monster Updater ("Slime Pop" look)
 # Portal: same Bazzite Portal app, opened through monster-portal so it gets the Monster look and name.
-chmod 755 /usr/bin/monster-portal /usr/share/plasma/plasmoids/org.monsterlinux.updater/contents/code/updater.sh
+chmod 755 /usr/libexec/monster-user-fixes /usr/bin/monster-portal /usr/share/plasma/plasmoids/org.monsterlinux.updater/contents/code/updater.sh
 for f in /usr/share/applications/io.github.ublue_os.yafti_gtk.desktop /etc/skel/.config/autostart/bazzite-portal.desktop /etc/xdg/autostart/bazzite-portal.desktop; do
   [ -f "$f" ] || continue
   sed -i -E 's@^Exec=(/usr/bin/)?yafti_gtk\.py@Exec=/usr/bin/monster-portal@; s@^Icon=.*@Icon=org.monsterlinux.portal@; s@^Name=.*@Name=Monster Portal@; /^Name\[/d' "$f"
@@ -191,6 +191,9 @@ else
 fi
 rm -f /usr/libexec/ublue-motd.monster
 
+#### No window snapping: dragging a window to an edge or the top doesn't resize it or stick it there
+for k in ElectricBorderTiling ElectricBorderMaximize; do kwriteconfig6 --file /etc/xdg/kwinrc --group Windows --key $k false; done
+for k in BorderSnapZone WindowSnapZone CenterSnapZone; do kwriteconfig6 --file /etc/xdg/kwinrc --group Windows --key $k 0; done
 #### Brave: the standard web browser
 if [ -L /opt ]; then rm /opt && mkdir -p /opt; fi   # Brave installs into /opt (see the NordVPN note)
 curl -fsSL --retry 3 https://brave-browser-rpm-release.s3.brave.com/brave-browser.repo -o /etc/yum.repos.d/brave-browser.repo \

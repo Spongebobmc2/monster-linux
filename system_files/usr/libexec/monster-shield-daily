@@ -1,0 +1,12 @@
+#!/usr/bin/bash
+# Daily virus check of Downloads (Monster Shield). Quiet unless something is found.
+S="${XDG_DATA_HOME:-$HOME/.local/share}/monster-shield"; mkdir -p "$S"
+command -v clamscan >/dev/null || exit 0
+[ -d "$HOME/Downloads" ] || exit 0
+R=$(clamscan -r -i --no-summary "$HOME/Downloads" 2>/dev/null)
+n=$(printf '%s\n' "$R" | grep -c ' FOUND$')
+printf '{"at":%s,"kind":"daily","found":%s}\n' "$(date +%s)" "$n" > "$S/daily.json"
+if [ "$n" -gt 0 ]; then
+  printf '%s\n' "$R" > "$S/scan.log"; echo daily > "$S/kind"; echo "DONE 1" >> "$S/scan.log"
+  notify-send -a "Monster Shield" -i org.monsterlinux.shield -u critical "Monster Shield found $n problem file(s) in Downloads" "Open Monster Shield and press Lock them away."
+fi

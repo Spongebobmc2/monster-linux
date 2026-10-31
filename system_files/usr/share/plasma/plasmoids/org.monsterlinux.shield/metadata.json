@@ -1,0 +1,14 @@
+{
+  "KPackageStructure": "Plasma/Applet",
+  "KPlugin": {
+    "Id": "org.monsterlinux.shield",
+    "Name": "Monster Shield",
+    "Description": "Firewall and virus check, one click each.",
+    "Icon": "org.monsterlinux.shield",
+    "Category": "System Information",
+    "Authors": [{ "Name": "Spongebobmc2" }],
+    "License": "GPL-2.0-or-later",
+    "Version": "1.0"
+  },
+  "X-Plasma-API-Minimum-Version": "6.0"
+}

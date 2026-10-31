@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Monster power buttons
+Comment=Shows the little-monster Sleep, Restart and Shut Down buttons on the lock screen
+Exec=/usr/libexec/monster-power-icons
+NoDisplay=true
+X-KDE-autostart-phase=1

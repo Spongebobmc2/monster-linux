@@ -1,0 +1,37 @@
+#!/usr/bin/bash
+# Puts the little-monster power buttons (Sleep, Restart, Shut Down, Switch User, Lock, Log Out)
+# on top of whatever icon set you use, so they show on the lock screen after sleep,
+# in the start menu and on the log-out screen. All your other icons stay the same.
+#   monster-power-icons            wrap the icon set you use now (runs at every login)
+#   monster-power-icons <theme>    wrap this icon set (Themes Studio calls this)
+DATA="${XDG_DATA_HOME:-$HOME/.local/share}"
+W="$DATA/icons/Monster-Wrap"
+SRC=/usr/share/icons/Monster-Login/scalable/actions
+[ -d "$SRC" ] || exit 0
+cur=$(kreadconfig6 --file kdeglobals --group Icons --key Theme)
+if [ -n "${1:-}" ]; then base="$1"
+elif [ "$cur" = Monster-Wrap ]; then base=$(sed -n 's/^X-Monster-Base=//p' "$W/index.theme" 2>/dev/null)
+else base="$cur"; fi
+base="${base:-breeze-dark}"
+[ "$base" = Monster-Wrap ] && base=breeze-dark
+mkdir -p "$W/scalable"
+ln -sfn "$SRC" "$W/scalable/actions"
+cat > "$W/index.theme" <<T
+[Icon Theme]
+Name=Monster ($base)
+Comment=$base with the Monster Linux power buttons
+Inherits=$base,breeze-dark,breeze,hicolor
+Directories=scalable/actions
+X-Monster-Base=$base
+
+[scalable/actions]
+Size=64
+MinSize=16
+MaxSize=512
+Type=Scalable
+Context=Actions
+T
+if [ "$cur" != Monster-Wrap ] || [ -n "${1:-}" ]; then
+  plasma-changeicons Monster-Wrap >/dev/null 2>&1 || kwriteconfig6 --file kdeglobals --group Icons --key Theme Monster-Wrap
+fi
+exit 0

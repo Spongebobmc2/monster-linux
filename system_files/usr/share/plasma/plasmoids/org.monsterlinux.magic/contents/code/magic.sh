@@ -55,7 +55,7 @@ import json, sys
 p, k, v = sys.argv[1:4]
 try: d = json.load(open(p))
 except Exception: d = {}
-d[k] = v; json.dump(d, open(p, "w"))
+d[k] = v; json.dump(d, open(p, "w"))  # v = "tone|short label"
 PY
   ;;
 

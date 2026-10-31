@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 # Monster Linux system card: shown at the top right when you open a terminal
-# (Konsole, or the terminal panel in Dolphin with F4). Run "monster-hello" any time.
-# Turn it off:  touch ~/.config/monster-hello-off      Turn it on: rm ~/.config/monster-hello-off
+# (Konsole, or the terminal panel in Dolphin with F4). It replaces Bazzite's welcome banner.
+# Run "monster-hello" any time. Turn it on or off with:  ujust toggle-user-motd
 CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/monster-hello"
 BOOT=$(cat /proc/sys/kernel/random/boot_id 2>/dev/null)
 
@@ -86,3 +86,8 @@ for ((i=0;i<h;i++)); do
   if [ $artw -gt 0 ]; then line "$F│$Z" "$a  $cell $F│"; else line "$F│$Z " "$cell  $F│"; fi
 done
 line "$F╰" "$(rep ─ "$inner")╯"
+tip="ujust --choose  all Monster commands   ·   ujust toggle-user-motd  hide this card"
+if [ $(( ${#tip} + 2 )) -le "$cols" ]; then
+  tp=$(( pad + width - ${#tip} )); [ $tp -lt 0 ] && tp=0
+  printf '%*s%s%s%s\n' "$tp" '' "$K" "$tip" "$Z"
+fi

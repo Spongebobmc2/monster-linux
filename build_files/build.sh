@@ -180,4 +180,13 @@ if command -v freshclam >/dev/null; then
 fi
 
 #### Terminal system card (top right of Konsole / Dolphin's F4 terminal). Reads each PC's own details.
+# It takes the place of Bazzite's welcome banner (same on/off switch: ujust toggle-user-motd).
 chmod 755 /usr/bin/monster-hello
+if [ -f /usr/libexec/ublue-motd ]; then
+  mv /usr/libexec/ublue-motd /usr/libexec/ublue-motd.bazzite
+  install -m 755 /usr/libexec/ublue-motd.monster /usr/libexec/ublue-motd
+  echo "::notice title=Terminal card::Bazzite welcome banner replaced by the Monster card · callers: $(grep -rl ublue-motd /etc/profile.d /usr/share/fish/functions /etc/bashrc 2>/dev/null | tr '\n' ' ')"
+else
+  echo "::warning title=Terminal card::ublue-motd not found; card not hooked in"
+fi
+rm -f /usr/libexec/ublue-motd.monster

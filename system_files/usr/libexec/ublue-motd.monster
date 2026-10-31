@@ -1,0 +1,3 @@
+#!/usr/bin/bash
+# Monster Linux: the terminal welcome is the Monster system card (replaces Bazzite's banner).
+exec /usr/bin/monster-hello "$@"

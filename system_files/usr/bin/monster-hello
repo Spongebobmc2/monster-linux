@@ -75,5 +75,13 @@ for ((i=0;i<${#items[@]};i+=per)); do
     printf '%s%s\n' "$sp" "$(top "$k0" $w0)"; printf '%s%s\n' "$sp" "$(mid "$v0" $w0)"; printf '%s%s\n' "$sp" "$(bot $w0)"
   fi
 done
+# full-width box: how to update and upgrade everything
+U=$'\e[38;2;230;255;107m'
+uw=$(( total - 4 ))
+ucmd="ujust update"; utxt="updates the system, apps and drivers"
+if (( uw >= ${#ucmd} + 3 + ${#utxt} )); then uline="$ucmd   $K$utxt"; ulen=$(( ${#ucmd} + 3 + ${#utxt} )); else uline="$ucmd"; ulen=${#ucmd}; fi
+printf '%s%s\n' "$sp" "$(top "Update & upgrade" $uw)"
+printf '%s%s %s%s%s%s %s\n' "$sp" "$F│$Z" "$U" "$uline" "$Z" "$(printf '%*s' $(( uw - ulen )) '')" "$F│$Z"
+printf '%s%s\n' "$sp" "$(bot $uw)"
 tip="ujust --choose  all commands  ·  ujust toggle-user-motd  hide this"
 if (( ${#tip} + 2 <= cols )); then tp=$(( pad + total - ${#tip} )); (( tp < 0 )) && tp=0; printf '%*s%s%s%s\n' "$tp" '' "$K" "$tip" "$Z"; fi

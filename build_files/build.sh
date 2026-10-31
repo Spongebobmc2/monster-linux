@@ -166,5 +166,6 @@ fc-cache -f /usr/share/fonts/monster >/dev/null 2>&1 || true
 #### Login screen buttons as little monsters (icon set used only by the login screen)
 chmod 755 /usr/libexec/monster-login-icons /usr/libexec/monster-power-icons
 gtk-update-icon-cache -f /usr/share/icons/Monster-Login >/dev/null 2>&1 || true
+gtk-update-icon-cache -f /usr/share/icons/hicolor >/dev/null 2>&1 || true
 systemctl enable monster-login-icons.service
 echo "::notice title=Login buttons::$(ls /usr/share/icons/Monster-Login/scalable/actions | tr '\n' ' ') · login user home: $(getent passwd plasmalogin | cut -d: -f6)"

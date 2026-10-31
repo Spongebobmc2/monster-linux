@@ -149,6 +149,13 @@ for f in /usr/share/applications/io.github.ublue_os.yafti_gtk.desktop /etc/skel/
   sed -i -E 's@^Exec=(/usr/bin/)?yafti_gtk\.py@Exec=/usr/bin/monster-portal@; s@^Icon=.*@Icon=org.monsterlinux.portal@; s@^Name=.*@Name=Monster Portal@; /^Name\[/d' "$f"
 done
 [ -f /usr/libexec/ublue-nvidia-flatpak-runtime-notify ] && sed -i 's@/usr/bin/yafti_gtk.py@/usr/bin/monster-portal@g' /usr/libexec/ublue-nvidia-flatpak-runtime-notify
+# Anything that still starts Bazzite's Portal (KRunner search, NVIDIA notices, ujust...) gets Monster Portal:
+# the real Portal code moves to /usr/libexec and /usr/bin/yafti_gtk.py becomes a small hand-off.
+if [ -f /usr/bin/yafti_gtk.py ] && ! grep -q monster-portal /usr/bin/yafti_gtk.py; then
+  mv /usr/bin/yafti_gtk.py /usr/libexec/yafti_gtk_bazzite.py
+  printf '#!/usr/bin/bash\n# Monster Linux: the Portal is Monster Portal\nexec /usr/bin/monster-portal "$@"\n' > /usr/bin/yafti_gtk.py
+  chmod 755 /usr/bin/yafti_gtk.py
+fi
 echo "::notice title=Monster Portal::$(grep -h '^Exec=' /usr/share/applications/io.github.ublue_os.yafti_gtk.desktop 2>/dev/null || echo 'Portal entry not found')"
 # Updater: Monster Updater runs Bazzite's own updater (uupd). Any other "update" entry in the menu is hidden
 # so there is only one updater to find.
@@ -171,6 +178,8 @@ systemctl enable monster-login-icons.service
 echo "::notice title=Login buttons::$(ls /usr/share/icons/Monster-Login/scalable/actions | tr '\n' ' ') · login user home: $(getent passwd plasmalogin | cut -d: -f6)"
 
 #### Monster Shield: firewall places (Home / Public) and ClamAV virus check
+# New installs start on Home
+[ -f /etc/firewalld/firewalld.conf ] && sed -i 's/^DefaultZone=.*/DefaultZone=monster-home/' /etc/firewalld/firewalld.conf
 chmod 755 /usr/share/plasma/plasmoids/org.monsterlinux.shield/contents/code/shield.sh /usr/libexec/monster-shield-daily
 dnf5 install -y clamav clamav-update || echo "::warning title=Monster Shield::ClamAV not installed"
 if command -v freshclam >/dev/null; then

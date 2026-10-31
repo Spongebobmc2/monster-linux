@@ -8,4 +8,10 @@ if [ "$(kreadconfig6 --file kwinrulesrc --group monster-glass --key Description)
   Q=$(command -v qdbus6 || command -v qdbus || true)
   [ -n "$Q" ] && $Q org.kde.KWin /KWin reconfigure >/dev/null 2>&1
 fi
+# Step 2: an old Portal autostart entry (written by the Bazzite Portal itself) opens Monster Portal instead.
+A="$HOME/.config/autostart/bazzite-portal.desktop"
+[ -f "$A" ] && sed -i -E 's@^Exec=(/usr/bin/)?yafti_gtk\.py@Exec=/usr/bin/monster-portal@; s@^Name=.*@Name=Monster Portal@' "$A"
+# Step 3: keep the firewall on your chosen place (Home unless you picked Public). No password needed.
+SH=/usr/share/plasma/plasmoids/org.monsterlinux.shield/contents/code/shield.sh
+[ -x "$SH" ] && bash "$SH" ensure >/dev/null 2>&1
 exit 0

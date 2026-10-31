@@ -3,7 +3,9 @@
 # It runs the very same Portal code and only adds the Monster name, header and style on top.
 import importlib.machinery, importlib.util, os, sys
 
-SRC = "/usr/bin/yafti_gtk.py"
+SRC = "/usr/libexec/yafti_gtk_bazzite.py"   # Bazzite's Portal code (moved here by the build)
+if not os.path.exists(SRC):
+    SRC = "/usr/bin/yafti_gtk.py"
 DIR = "/usr/share/monster-linux/portal"
 if not os.path.exists(SRC):
     sys.exit("Monster Portal: the Portal app (yafti_gtk.py) is not installed.")

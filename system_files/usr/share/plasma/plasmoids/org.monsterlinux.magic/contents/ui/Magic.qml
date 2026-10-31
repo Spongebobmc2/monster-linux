@@ -61,7 +61,7 @@ Rectangle {
     readonly property var allGood: findings.filter(f => f.k === "OK" || f.done)
     readonly property int nFail: findings.filter(f => f.k === "FAIL" && !f.done).length
     readonly property int nWarn: findings.filter(f => f.k === "WARN" && !f.done).length
-    readonly property var manualFixes: ["secureboot", "printers", "open-downloads", "yesterday-go", "update", "virus", "steam", "drive-firmware", "protonplus", "empty-trash", "reset-app", "restart-app", "repair-app", "space", "drive"]
+    readonly property var manualFixes: ["secureboot", "printers", "open-downloads", "yesterday-go", "update", "virus", "steam", "drive-firmware", "protonplus", "protonge", "empty-trash", "reset-app", "restart-app", "repair-app", "space", "drive"]
     readonly property var autoFixable: findings.filter(f => f.fix && !f.done && f.k !== "OK" && f.k !== "TIP" && manualFixes.indexOf(f.fix.id) < 0)
     readonly property int greenCount: buttons.filter(b => (last[b[0]] || "").startsWith("green")).length
     readonly property int amberCount: buttons.filter(b => (last[b[0]] || "").startsWith("amber") || (last[b[0]] || "").startsWith("red")).length
@@ -282,7 +282,7 @@ Rectangle {
                                     RowLayout {
                                         anchors.fill: parent; anchors.leftMargin: 8; anchors.rightMargin: 10; spacing: 10
                                         Icon { path: nrow.modelData[3]; on: nrow.on; size: 28 }
-                                        Text { Layout.fillWidth: true; text: nrow.modelData[1]; font.family: magic.body; font.pixelSize: 12; font.weight: Font.DemiBold; color: magic.ink; elide: Text.ElideRight }
+                                        Text { Layout.fillWidth: true; text: nrow.modelData[1]; font.family: magic.body; font.pixelSize: 12; font.weight: Font.DemiBold; color: magic.ink; wrapMode: Text.WordWrap; maximumLineCount: 2; lineHeight: 0.95 }
                                         Chip { tone: nrow.chip ? nrow.chip.tone : ""; label: nrow.chip ? nrow.chip.text : "Not run" }
                                     }
                                     MouseArea { id: nma; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: magic.select(nrow.modelData) }
@@ -325,7 +325,7 @@ Rectangle {
                         }
                         ColumnLayout {
                             Layout.fillWidth: true; spacing: 5
-                            Text { text: magic.sel[1]; font.family: magic.head; font.weight: Font.ExtraBold; font.pixelSize: 19; color: magic.ink; Layout.fillWidth: true; elide: Text.ElideRight }
+                            Text { text: magic.sel[1]; font.family: magic.head; font.weight: Font.ExtraBold; font.pixelSize: 19; color: magic.ink; Layout.fillWidth: true; wrapMode: Text.WordWrap }
                             Text { text: magic.sel[2]; font.family: magic.body; font.pixelSize: 13; color: magic.dim; wrapMode: Text.Wrap; Layout.fillWidth: true }
                             RowLayout {
                                 visible: magic.sel[0] !== "all"
@@ -522,9 +522,9 @@ Rectangle {
         id: ch
         property string tone: ""
         property string label: ""
-        radius: 10; implicitHeight: 20; implicitWidth: ct.implicitWidth + 16
+        radius: 9; implicitHeight: 18; implicitWidth: ct.implicitWidth + 12
         color: tone === "red" ? "#fde3dd" : tone === "amber" ? "#fff1d6" : tone === "green" ? "#e5f4e9" : "#f3f6ee"
-        Text { id: ct; anchors.centerIn: parent; text: ch.label; font.family: "Sora"; font.pixelSize: 11; font.bold: true
+        Text { id: ct; anchors.centerIn: parent; text: ch.label; font.family: "Sora"; font.pixelSize: 10; font.bold: true
             color: ch.tone === "red" ? "#b23a26" : ch.tone === "amber" ? "#a8690a" : ch.tone === "green" ? "#2f8a4a" : "#9aa58e" }
     }
     component Icon: Rectangle {

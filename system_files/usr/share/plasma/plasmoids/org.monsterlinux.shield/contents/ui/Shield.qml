@@ -83,7 +83,7 @@ Rectangle {
         return Math.round(d / 86400) + " days ago"
     }
     Timer { id: scanTimer; interval: 1000; repeat: true; onTriggered: sh.pollScan() }
-    Component.onCompleted: { refresh(); pollScan() }
+    Component.onCompleted: { refresh(); run(["ensure"], () => refresh()); pollScan() }
 
     FolderDialog { id: pickFolder; title: "Pick a folder to check"; onAccepted: sh.startScan(decodeURIComponent(selectedFolder.toString().replace("file://", ""))) }
 
@@ -197,14 +197,14 @@ Rectangle {
                             }
                             Text {
                                 visible: sh.scan.running || (sh.scan.done !== null && sh.scan.done !== undefined)
-                                text: sh.scan.scanned.toLocaleString(Qt.locale(), "f", 0) + (sh.scan.total ? " of " + sh.scan.total.toLocaleString(Qt.locale(), "f", 0) : "") + " files checked"
+                                text: (sh.scan.running ? "Checked " : "") + sh.scan.scanned.toLocaleString(Qt.locale(), "f", 0) + (sh.scan.scanned === 1 ? " file" : " files") + (sh.scan.running ? " so far…" : " checked")
                                 font.family: sh.body; font.pixelSize: 12; color: sh.dim
                             }
                             Rectangle {
                                 visible: sh.scan.running
                                 Layout.fillWidth: true; implicitHeight: 8; radius: 4; color: sh.soft
                                 Rectangle { height: parent.height; radius: 4; color: sh.deep
-                                    width: parent.width * (sh.scan.total ? Math.min(1, sh.scan.scanned / sh.scan.total) : .05)
+                                    width: parent.width * (sh.scan.total ? Math.min(0.97, sh.scan.scanned / Math.max(sh.scan.total, sh.scan.scanned + 1)) : .05)
                                     Behavior on width { NumberAnimation { duration: 500 } } }
                             }
                             ListView {

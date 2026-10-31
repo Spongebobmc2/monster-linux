@@ -1,0 +1,11 @@
+[Unit]
+Description=Monster Linux login screen buttons
+Before=plasmalogin.service
+ConditionPathExists=/usr/share/icons/Monster-Login/index.theme
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/monster-login-icons
+
+[Install]
+WantedBy=multi-user.target

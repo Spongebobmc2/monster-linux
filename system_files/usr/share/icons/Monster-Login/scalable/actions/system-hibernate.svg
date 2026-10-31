@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs>
+<radialGradient id="b" cx=".36" cy=".28" r=".85"><stop offset="0" stop-color="#d8f86a"/><stop offset=".55" stop-color="#8cc22a"/><stop offset="1" stop-color="#4c7a12"/></radialGradient>
+<radialGradient id="d" cx=".36" cy=".28" r=".85"><stop offset="0" stop-color="#3a4a2a"/><stop offset=".6" stop-color="#1c2614"/><stop offset="1" stop-color="#0c1208"/></radialGradient>
+<radialGradient id="p" cx=".36" cy=".28" r=".85"><stop offset="0" stop-color="#c9b6ff"/><stop offset=".55" stop-color="#8b6fe0"/><stop offset="1" stop-color="#4f3a9e"/></radialGradient>
+<filter id="gl" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.6" result="x"/><feMerge><feMergeNode in="x"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs><path d="M9,57 C8,41 11,26 21,19 C25,16 35,16 39,19 C49,26 52,41 51,57 Q46.8,60 42.6,57 Q38.4,56 34.2,57 Q30.0,60 25.8,57 Q21.6,56 17.4,57 Q13.2,60 9.0,57Z" fill="url(#p)" stroke="#0e140a" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/><path d="M21,34 Q30,40 39,34" stroke="#0e140a" stroke-width="2.8" fill="none" stroke-linecap="round"/><path d="M27,47 Q30,49 33,47" stroke="#0e140a" stroke-width="2.2" fill="none" stroke-linecap="round"/><path d="M52,6 a9,9 0 1 0 8,12 a7,7 0 1 1 -8,-12Z" fill="#e6ff6b" filter="url(#gl)"/></svg>

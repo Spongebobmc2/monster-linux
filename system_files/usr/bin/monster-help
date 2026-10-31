@@ -1,0 +1,128 @@
+#!/usr/bin/bash
+# Monster Linux terminal guides.
+#   monster-help update | cheat | howto      print a guide here
+#   monster-help open monster-help://<name>  open it in its own small window (used by the terminal buttons)
+L=$'\e[38;2;168;224;58m'; Y=$'\e[38;2;230;255;107m'; K=$'\e[38;2;138;152;120m'; W=$'\e[38;2;232;238;224m'; B=$'\e[1m'; Z=$'\e[0m'
+H=$'\e[48;2;140;194;42m\e[38;2;20;32;10m\e[1m'
+title() { printf '\n%s  %s  %s\n\n' "$H" "$1" "$Z"; }
+sec()   { printf '\n%s%s%s\n' "$L$B" "$1" "$Z"; }
+cmd()   { printf '  %s%-42s%s %s\n' "$Y" "$1" "$Z" "$2"; }
+txt()   { printf '  %s%s%s\n' "$W" "$1" "$Z"; }
+dim()   { printf '  %s%s%s\n' "$K" "$1" "$Z"; }
+
+update() {
+  title "UPDATE & UPGRADE"
+  txt "On Monster Linux one command updates AND upgrades everything:"
+  txt "the system, drivers, apps (Flatpak) and command-line tools."
+  printf '\n    %s%s ujust update %s\n\n' "$H" "" "$Z"
+  sec "How to use it"
+  txt "1. Type  ujust update  and press Enter."
+  txt "2. Type your password if it asks (nothing shows while you type, that's normal)."
+  txt "3. Wait until it says it's finished."
+  txt "4. Restart the PC so the new system starts:  systemctl reboot"
+  sec "Good to know"
+  cmd "rpm-ostree status" "see which system version you're running"
+  cmd "flatpak update" "update only your apps"
+  cmd "rpm-ostree rollback" "go back to the previous system (then restart)"
+  dim "There's no apt or dnf upgrade here: the whole system updates as one piece,"
+  dim "so an update can never half-break your PC. Monster Updater does the same with a button."
+  echo
+}
+
+cheat() {
+  title "LINUX CHEAT SHEET"
+  sec "Where am I and what's here"
+  cmd "pwd" "show the folder you're in"
+  cmd "ls" "list what's in this folder"
+  cmd "ls -la" "list everything, with sizes and hidden files"
+  cmd "cd Documents" "go into a folder"
+  cmd "cd ..   /   cd ~" "go up one folder  /  go home"
+  sec "Files and folders"
+  cmd "mkdir Projects" "make a folder"
+  cmd "touch notes.txt" "make an empty file"
+  cmd "cp file.txt copy.txt" "copy a file  (cp -r for folders)"
+  cmd "mv old.txt new.txt" "move or rename"
+  cmd "rm file.txt" "delete a file  (careful: no Trash!)"
+  cmd "rm -r folder" "delete a folder and everything in it"
+  sec "Look inside files"
+  cmd "cat notes.txt" "print a file"
+  cmd "less big.log" "read a long file (q to quit)"
+  cmd "nano notes.txt" "edit a file in the terminal (Ctrl+O save, Ctrl+X exit)"
+  cmd "grep -ri word ." "find a word in every file here"
+  cmd "find . -name '*.pdf'" "find files by name"
+  sec "Apps"
+  cmd "flatpak search vlc" "look for an app"
+  cmd "flatpak install flathub org.videolan.VLC" "install it"
+  cmd "flatpak list --app" "list installed apps"
+  cmd "flatpak uninstall org.videolan.VLC" "remove it"
+  cmd "ujust --choose" "menu of every Monster/Bazzite helper"
+  sec "System"
+  cmd "fastfetch" "PC and system info"
+  cmd "df -h" "free disk space"
+  cmd "free -h" "memory use"
+  cmd "btop" "live CPU, memory and programs (q to quit)"
+  cmd "systemctl reboot  /  poweroff" "restart  /  shut down"
+  sec "Network"
+  cmd "ping -c 4 google.com" "is the internet working?"
+  cmd "ip a" "your network addresses"
+  cmd "nmcli device wifi list" "Wi-Fi networks nearby"
+  sec "Programs that hang"
+  cmd "ps aux | grep firefox" "find a program"
+  cmd "pkill firefox" "close it by name"
+  cmd "kill 1234" "close it by number (kill -9 to force)"
+  sec "Power user"
+  cmd "sudo <command>" "run as administrator (asks your password)"
+  cmd "chmod +x script.sh" "make a script runnable, then ./script.sh"
+  cmd "man ls   /   ls --help" "the manual for any command"
+  sec "Keys"
+  cmd "Tab" "finish the name for you (press twice to see choices)"
+  cmd "Up arrow" "previous commands"
+  cmd "Ctrl+C" "stop what's running"
+  cmd "Ctrl+Shift+C / V" "copy / paste in Konsole"
+  cmd "Ctrl+L  or  clear" "clear the screen"
+  echo
+}
+
+howto() {
+  title "LINUX HOW TO: 10 SMALL STEPS"
+  dim "Do one step a day. Type each command, press Enter, and look at what happens."
+  sec "1. Where am I?"
+  txt "pwd shows your folder, ls shows what's in it."; cmd "pwd" ""; cmd "ls" ""
+  sec "2. Walk around"
+  txt "cd goes into a folder, cd .. goes back up, cd alone goes home."; cmd "cd Downloads" ""; cmd "cd .." ""
+  sec "3. Make things"
+  txt "Make a practice folder and a file inside it."; cmd "mkdir practice && cd practice" ""; cmd "touch hello.txt && ls" ""
+  sec "4. Write and read"
+  txt "Put words in a file and read them back."; cmd "echo 'Hi Monster' > hello.txt" ""; cmd "cat hello.txt" ""
+  sec "5. Copy, move, delete"
+  cmd "cp hello.txt copy.txt" ""; cmd "mv copy.txt renamed.txt" ""; cmd "rm renamed.txt" ""
+  dim "rm deletes for good: there's no Trash in the terminal."
+  sec "6. Find things"
+  cmd "find ~ -name '*.jpg' | head" "pictures in your home"; cmd "grep -ri monster ~/practice" "words inside files"
+  sec "7. Install an app"
+  cmd "flatpak search gimp" ""; cmd "flatpak install flathub org.gimp.GIMP" ""
+  sec "8. Update everything"
+  cmd "ujust update" "then restart"
+  sec "9. Be the boss (sudo)"
+  txt "sudo runs one command as administrator. Only use it when a guide tells you to."
+  cmd "sudo rpm-ostree status" "asks your password; nothing shows while you type"
+  sec "10. Get help and undo"
+  cmd "man ls" "manual (q to quit)"; cmd "ls --help" "short help"
+  txt "Something broke after an update? Pick the previous entry in the boot menu,"
+  txt "or press It Worked Yesterday in Monster Magic."
+  echo
+  dim "Clean up when you're done:  cd ~ && rm -r practice"
+  echo
+}
+
+case "${1:-}" in
+  update|cheat|howto) "$1" ;;
+  open)
+    what="${2#monster-help://}"; what="${what%%/*}"
+    case "$what" in update|cheat|howto) ;; *) exit 0;; esac
+    if command -v konsole >/dev/null; then
+      konsole --separate --hide-menubar --hide-tabbar -p TerminalColumns=104 -p TerminalRows=40 \
+        -e bash -c "/usr/bin/monster-help $what | less -R; exit" >/dev/null 2>&1 & disown
+    else xdg-terminal-exec bash -c "/usr/bin/monster-help $what | less -R" & disown; fi ;;
+  *) echo "monster-help update | cheat | howto" ;;
+esac

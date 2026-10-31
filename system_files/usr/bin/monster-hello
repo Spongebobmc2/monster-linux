@@ -52,36 +52,52 @@ items+=("System|$SYS")
 items+=("Kernel|${KERN%.fc*}")
 
 cols=$(tput cols 2>/dev/null || echo 80)
-# widest value in each column decides that column's box width
-w0=0; w1=0
-for i in "${!items[@]}"; do v=${items[$i]#*|}; k=${items[$i]%%|*}; n=$(( ${#v} > ${#k}+1 ? ${#v} : ${#k}+1 ))
-  if (( i % 2 == 0 )); then (( n > w0 )) && w0=$n; else (( n > w1 )) && w1=$n; fi; done
-per=2; total=$(( w0 + 4 + 1 + w1 + 4 ))
-if (( total + 2 > cols )); then per=1; (( w1 > w0 )) && w0=$w1; total=$(( w0 + 4 )); fi
-pad=$(( cols - total - 1 )); (( pad < 0 )) && pad=0
-sp=$(printf '%*s' "$pad" '')
 rep() { local s=""; for ((j=0;j<$2;j++)); do s+="$1"; done; printf '%s' "$s"; }
 top() { printf '%s' "$F╭─ $L$1$F $(rep ─ $(( $2 - ${#1} - 1 )))╮$Z"; }
 mid() { printf '%s' "$F│$Z $W$1$(printf '%*s' $(( $2 - ${#1} )) '') $F│$Z"; }
 bot() { printf "%s" "$F╰$(rep ─ $(( $1 + 2 )))╯$Z"; }
+
+# ---- left: three buttons (clickable links that open a small help window) ----
+B=$'\e[48;2;140;194;42m\e[38;2;20;32;10m\e[1m'
+link() { printf '\e]8;;monster-help://%s\e\\%s\e]8;;\e\\' "$1" "$2"; }
+bw=24
+btn() { local t="  ▸  $2"; printf '%s%s%s' "$B" "$(link "$1" "$t$(printf '%*s' $(( bw - ${#t} )) '')")" "$Z"; }
+LL=( "$(btn update 'Update')" "" "$(btn cheat 'Linux Cheat Sheet')" "" "$(btn howto 'Linux How To')" ""
+     "$K click a button, or type:$Z" "$W updatehelp$K · $W cheatsheet$K · $W howto$Z" )
+LW=$bw; (( LW < 34 )) && LW=34      # the hint line is 33 wide
+
+# ---- right: the PC boxes, two per row ----
+w0=0; w1=0
+for i in "${!items[@]}"; do v=${items[$i]#*|}; k=${items[$i]%%|*}; n=$(( ${#v} > ${#k}+1 ? ${#v} : ${#k}+1 ))
+  if (( i % 2 == 0 )); then (( n > w0 )) && w0=$n; else (( n > w1 )) && w1=$n; fi; done
+per=2; total=$(( w0 + 4 + 1 + w1 + 4 ))
+# not enough room beside the buttons: one box per row
+if (( LW + 3 + total + 1 > cols )); then per=1; (( w1 > w0 )) && w0=$w1; total=$(( w0 + 4 )); fi
+RL=()
 for ((i=0;i<${#items[@]};i+=per)); do
   k0=${items[$i]%%|*}; v0=${items[$i]#*|}
   if (( per == 2 )) && (( i+1 < ${#items[@]} )); then
     k1=${items[$((i+1))]%%|*}; v1=${items[$((i+1))]#*|}
-    printf '%s%s %s\n' "$sp" "$(top "$k0" $w0)" "$(top "$k1" $w1)"
-    printf '%s%s %s\n' "$sp" "$(mid "$v0" $w0)" "$(mid "$v1" $w1)"
-    printf '%s%s %s\n' "$sp" "$(bot $w0)" "$(bot $w1)"
+    RL+=("$(top "$k0" $w0) $(top "$k1" $w1)" "$(mid "$v0" $w0) $(mid "$v1" $w1)" "$(bot $w0) $(bot $w1)")
   else
-    printf '%s%s\n' "$sp" "$(top "$k0" $w0)"; printf '%s%s\n' "$sp" "$(mid "$v0" $w0)"; printf '%s%s\n' "$sp" "$(bot $w0)"
+    RL+=("$(top "$k0" $w0)" "$(mid "$v0" $w0)" "$(bot $w0)")
   fi
 done
-# full-width box: how to update and upgrade everything
-U=$'\e[38;2;230;255;107m'
-uw=$(( total - 4 ))
-ucmd="ujust update"; utxt="updates the system, apps and drivers"
-if (( uw >= ${#ucmd} + 3 + ${#utxt} )); then uline="$ucmd   $K$utxt"; ulen=$(( ${#ucmd} + 3 + ${#utxt} )); else uline="$ucmd"; ulen=${#ucmd}; fi
-printf '%s%s\n' "$sp" "$(top "Update & upgrade" $uw)"
-printf '%s%s %s%s%s%s %s\n' "$sp" "$F│$Z" "$U" "$uline" "$Z" "$(printf '%*s' $(( uw - ulen )) '')" "$F│$Z"
-printf '%s%s\n' "$sp" "$(bot $uw)"
+
+# ---- put them together: buttons top left, boxes top right ----
+if (( LW + 3 + total + 1 <= cols )); then
+  gap=$(( cols - LW - total - 1 ))
+  n=$(( ${#LL[@]} > ${#RL[@]} ? ${#LL[@]} : ${#RL[@]} ))
+  for ((i=0;i<n;i++)); do
+    l="${LL[$i]:-}"; vis=$(printf '%s' "$l" | sed -E 's/\x1b\]8;;[^\x1b]*\x1b\\//g; s/\x1b\[[0-9;]*m//g'); vis=${#vis}
+    printf '%s%*s' "$l" $(( LW - vis )) ''
+    if [ -n "${RL[$i]:-}" ]; then printf '%*s%s' "$gap" '' "${RL[$i]}"; fi
+    printf '\n'
+  done
+else   # narrow window: buttons first, then the boxes
+  for l in "${LL[@]}"; do printf '%s\n' "$l"; done
+  for r in "${RL[@]}"; do printf '%s\n' "$r"; done
+fi
 tip="ujust --choose  all commands  ·  ujust toggle-user-motd  hide this"
-if (( ${#tip} + 2 <= cols )); then tp=$(( pad + total - ${#tip} )); (( tp < 0 )) && tp=0; printf '%*s%s%s%s\n' "$tp" '' "$K" "$tip" "$Z"; fi
+(( ${#tip} + 2 <= cols )) && printf '%*s%s%s%s\n' $(( cols - ${#tip} - 1 )) '' "$K" "$tip" "$Z"
+exit 0

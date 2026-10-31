@@ -4,12 +4,19 @@
 S="${XDG_DATA_HOME:-$HOME/.local/share}/monster-shield"; mkdir -p "$S"
 LOG="$S/scan.log"; Q="$S/quarantine"; PIDF="$S/scan.pid"
 scanning() { [ -f "$PIDF" ] && kill -0 "$(cat "$PIDF")" 2>/dev/null; }
+# the zone your network connection is really in (falls back to the default zone)
+active_zone() {
+  local z
+  z=$(firewall-cmd --get-active-zones 2>/dev/null | awk '/^[^ ]/{zone=$1; next} /interfaces:/ && $0 !~ /interfaces: *lo *$/ {print zone; exit}')
+  [ -n "$z" ] || z=$(firewall-cmd --get-default-zone 2>/dev/null)
+  printf '%s' "$z"
+}
 ok() { echo "OK $*"; }; fail() { echo "FAIL $*"; }
 
 case "$1" in
 status)
   fw=off; systemctl is-active -q firewalld && fw=on
-  zone=$(firewall-cmd --get-default-zone 2>/dev/null)
+  zone=$(active_zone)
   clam=no; command -v clamscan >/dev/null && clam=yes
   db=0; for f in /var/lib/clamav/daily.cld /var/lib/clamav/daily.cvd; do [ -f "$f" ] && db=$(stat -c %Y "$f"); done
   daily=no; systemctl --user is-enabled -q monster-shield-scan.timer 2>/dev/null && daily=yes
@@ -24,11 +31,16 @@ print(t)' "$S/last.json" "$S/daily.json" "$S/last-run.json")
   printf '{"fw":"%s","zone":"%s","clam":"%s","db":%s,"daily":"%s","last":%s,"quarantined":%s,"lastscan":%s}\n' "$fw" "$zone" "$clam" "$db" "$daily" "$last" "$qn" "${lastscan:-0}" ;;
 
 fw-on)
-  pkexec /usr/libexec/monster-root fw-on ;;
+  rm -f "$S/fw-off"; pkexec /usr/libexec/monster-root fw-on ;;
 fw-off)
-  pkexec systemctl disable --now firewalld >/dev/null 2>&1 && ok "Firewall is off" || fail "Firewall not changed" ;;
+  pkexec systemctl disable --now firewalld >/dev/null 2>&1 && { touch "$S/fw-off"; ok "Firewall is off"; } || fail "Firewall not changed" ;;
 fw-zone)
-  case "$2" in home|public) pkexec /usr/libexec/monster-root fw-zone "$2" ;; *) fail "Unknown place" ;; esac ;;
+  case "$2" in home|public) echo "$2" > "$S/place"; pkexec /usr/libexec/monster-root fw-zone "$2" ;; *) fail "Unknown place" ;; esac ;;
+ensure)
+  # keep the firewall on your chosen place (Home unless you picked Public); no password needed
+  want=$(cat "$S/place" 2>/dev/null); case "$want" in home|public) ;; *) want=home ;; esac
+  if ! systemctl is-active -q firewalld; then [ -e "$S/fw-off" ] && exit 0; pkexec /usr/libexec/monster-root fw-zone "$want" >/dev/null 2>&1; exit 0; fi
+  [ "$(active_zone)" = "monster-$want" ] || pkexec /usr/libexec/monster-root fw-zone "$want" >/dev/null 2>&1 ;;
 
 update-db)
   command -v freshclam >/dev/null || { fail "Virus check is not installed"; exit 0; }

@@ -1,6 +1,7 @@
 // Monster Updater window — "Slime Pop" look.
 // Starts Bazzite's own updater (the same one "ujust update" uses) and shows each step.
 import QtQuick
+import QtQuick.Window
 import QtQuick.Layouts
 import QtQuick.Controls as QQC2
 import org.kde.plasma.plasma5support as P5Support
@@ -253,7 +254,7 @@ Rectangle {
                 }
                 Pill { label: "Restart to finish"; primary: true; visible: up.phase === "done" && up.staged; onClicked: up.run(["restart"]) }
                 Pill { label: up.phase === "failed" ? "Try again" : "Update now"; primary: true; visible: up.phase === "idle" || up.phase === "failed"; onClicked: up.startUpdate() }
-                Pill { label: up.phase === "running" ? "Hide" : "Close"; onClicked: Qt.quit() }
+                Pill { label: up.phase === "running" ? "Hide" : "Close"; onClicked: { if (up.Window.window) up.Window.window.close(); else Qt.quit() } }
             }
         }
     }

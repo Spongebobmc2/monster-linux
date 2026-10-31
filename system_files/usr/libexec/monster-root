@@ -33,9 +33,9 @@ case "${1:-}" in
     systemctl enable --now fstrim.timer >/dev/null 2>&1 && echo "TRIMTIMER on"
     fstrim -av 2>/dev/null | sed 's/^/TRIM /' ;;
   clean)
-    flatpak uninstall --system --unused -y --noninteractive >/dev/null 2>&1
+    timeout 240 flatpak uninstall --system --unused -y --noninteractive >/dev/null 2>&1
     journalctl --vacuum-time=14d >/dev/null 2>&1
-    rpm-ostree cleanup -m >/dev/null 2>&1
+    timeout 240 rpm-ostree cleanup -m >/dev/null 2>&1
     echo "OK Removed unused shared app parts, logs older than 2 weeks and update caches" ;;
   boot-fast)
     systemctl disable NetworkManager-wait-online.service >/dev/null 2>&1

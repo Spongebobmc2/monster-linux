@@ -17,6 +17,10 @@ say() { echo "$*"; }
 human() { numfmt --to=iec --suffix=B "$1" 2>/dev/null || echo "${1} bytes"; }
 freebytes() { df --output=avail -B1 "$HOME" | tail -1 | tr -d ' '; }
 Q=$(command -v qdbus6 || command -v qdbus-qt6 || command -v qdbus || true)
+active_zone() {
+  local z; z=$(firewall-cmd --get-active-zones 2>/dev/null | awk '/^[^ ]/{zone=$1; next} /interfaces:/ && $0 !~ /interfaces: *lo *$/ {print zone; exit}')
+  [ -n "$z" ] || z=$(firewall-cmd --get-default-zone 2>/dev/null); printf '%s' "$z"
+}
 term() {  # run something interactive in a terminal window
   if command -v konsole >/dev/null; then konsole --hold -e bash -lc "$1" >/dev/null 2>&1 & disown
   else xdg-terminal-exec bash -lc "$1; read -rp 'Press Enter to close'" >/dev/null 2>&1 & disown; fi
@@ -96,7 +100,7 @@ game)
   ge=$(ls -d "$HOME"/.steam/steam/compatibilitytools.d/GE-Proton* "$HOME"/.local/share/Steam/compatibilitytools.d/GE-Proton* "$HOME"/.var/app/com.valvesoftware.Steam/data/Steam/compatibilitytools.d/GE-Proton* 2>/dev/null | sort -V | tail -1)
   if [ -n "$ge" ]; then say "OK Proton-GE: $(basename "$ge")"
   else say "WARN Proton-GE isn't installed (it fixes many games that won't start)"
-       say "FIX protonplus|Get Proton-GE|Installs ProtonPlus and opens it so you can add Proton-GE in one click"; fi
+       say "FIX protonge|Install Proton-GE|Downloads the newest GE-Proton (about 500 MB) straight into Steam; then restart Steam"; fi
   if command -v gamemoded >/dev/null; then say "OK GameMode is available"; else say "STEP GameMode not found (optional)"; fi
   if command -v powerprofilesctl >/dev/null; then
     pp=$(powerprofilesctl get 2>/dev/null)
@@ -218,27 +222,33 @@ fast)
 
 # ---------------------------------------------------------------------------- 8
 space)
-  b=$(freebytes)
-  say "STEP Free space before: $(human "$b")"
-  flatpak uninstall --user --unused -y --noninteractive >/dev/null 2>&1 && say "OK Removed unused app parts (yours)"
-  rm -rf "$HOME/.cache/thumbnails" 2>/dev/null && say "OK Cleared picture previews (they rebuild by themselves)"
-  r=$(pkexec /usr/libexec/monster-root clean 2>/dev/null)
-  [ -n "$r" ] && echo "$r" || { say "WARN Skipped the system part|The clean-up helper didn't answer"; say "FIX space|Try again|Runs the system clean-up again"; }
+  b=$(freebytes); total=0
+  sz() { du -sb "$@" 2>/dev/null | awk '{s+=$1} END{print s+0}'; }
+  report() { [ "$2" -gt 1048576 ] && say "OK $1: $(human "$2") removed|$3" || say "OK $1: already clean|$3"; total=$((total+$2)); }
+  t=$(sz "$HOME/.cache/thumbnails"); rm -rf "$HOME/.cache/thumbnails" 2>/dev/null; report "Picture previews" "$t" "Small previews of your pictures and videos; they rebuild by themselves"
+  t=$(find "$HOME/.cache" -xdev -type f -atime +30 ! -path "*/monster-*" -printf '%s\n' 2>/dev/null | awk '{s+=$1} END{print s+0}')
+  find "$HOME/.cache" -xdev -type f -atime +30 ! -path "*/monster-*" -delete 2>/dev/null; report "Old app caches" "$t" "Temporary files apps haven't used in 30 days"
+  f0=$(freebytes); flatpak uninstall --user --unused -y --noninteractive >/dev/null 2>&1; f1=$(freebytes)
+  d=$((f1-f0)); [ $d -lt 0 ] && d=0; report "Unused app parts (yours)" "$d" "Runtimes no app of yours needs any more"
+  f0=$(freebytes); r=$(timeout 300 pkexec /usr/libexec/monster-root clean 2>/dev/null); f1=$(freebytes)
+  d=$((f1-f0)); [ $d -lt 0 ] && d=0
+  if [ -n "$r" ]; then report "System clean-up" "$d" "Shared app parts nothing uses, logs older than 2 weeks and old update downloads"
+  else say "WARN The system clean-up didn't finish|It can take a few minutes after an update"; say "FIX space|Try again|Runs Free Up Space again"; fi
   a=$(freebytes); d=$((a-b)); [ "$d" -lt 0 ] && d=0
-  tr=$(du -sb "$HOME/.local/share/Trash" 2>/dev/null | cut -f1); tr=${tr:-0}
-  [ "$tr" -gt $((500*1024*1024)) ] && { say "WARN The Trash holds $(human "$tr")"; say "FIX empty-trash|Empty the Trash|Deletes what's in the Trash for good"; }
-  dl=$(du -sb "$HOME/Downloads" 2>/dev/null | cut -f1); dl=${dl:-0}
-  [ "$dl" -gt $((5*1024*1024*1024)) ] && { say "WARN Downloads holds $(human "$dl")"; say "TIP Look through Downloads and delete what you don't need"; say "FIX open-downloads|Open Downloads|Opens the folder, biggest files first"; }
+  tr=$(sz "$HOME/.local/share/Trash"); tr=${tr:-0}
+  [ "$tr" -gt $((500*1024*1024)) ] && { say "WARN The Trash holds $(human "$tr")|Files you deleted are still taking space"; say "FIX empty-trash|Empty the Trash|Deletes what's in the Trash for good"; }
+  dl=$(sz "$HOME/Downloads"); dl=${dl:-0}
+  [ "$dl" -gt $((5*1024*1024*1024)) ] && { say "WARN Downloads holds $(human "$dl")|Old installers and videos add up"; say "FIX open-downloads|Open Downloads|Opens the folder so you can delete what you don't need"; }
   tot=$(df --output=size -B1 "$HOME" | tail -1 | tr -d ' ')
-  [ "$a" -lt $((tot/10)) ] && { say "WARN Less than 10% of the drive is free"; say "TIP Move videos and old games to another drive, or uninstall games you finished"; }
-  say "PROOF Freed $(human "$d") · free space now $(human "$a")" ;;
+  [ "$a" -lt $((tot/10)) ] && { say "WARN Less than 10% of the drive is free|Linux and games slow down when the drive is almost full"; say "TIP Move videos and finished games to another drive"; }
+  if [ "$d" -gt 1048576 ]; then say "PROOF Freed $(human "$d") · free space now $(human "$a")"; else say "PROOF Already clean · free space $(human "$a")"; fi ;;
 
 # ---------------------------------------------------------------------------- 9
 safe)
   SHIELD=/usr/share/plasma/plasmoids/org.monsterlinux.shield/contents/code/shield.sh
   if systemctl is-active --quiet firewalld; then
     say "OK Firewall is on|Blocks other computers from connecting to yours"
-    z=$(firewall-cmd --get-default-zone 2>/dev/null)
+    z=$(active_zone)
     case "$z" in monster-home) say "OK Firewall place: Home|Your phone, printer and other PCs can find this PC; nothing else can";;
                  monster-public) say "OK Firewall place: Public|Nothing on the network can connect to this PC";;
       *) say "WARN Firewall isn't set to Home or Public yet|Without a place it uses Bazzite's looser default"; say "FIX fw-home|Set to Home|Uses the Home setting (best for home). No password needed";; esac
@@ -255,7 +265,7 @@ safe)
   if [ "$se" = Enforcing ]; then say "OK SELinux protection is on|Keeps each program inside its own fence"
   else say "WARN SELinux protection is ${se:-unknown}|SELinux keeps each program inside its own fence"; say "FIX selinux|Turn SELinux on|Switches it to Enforcing (asks for your password: it's a big change)"; fi
   ports=$(ss -tulnH 2>/dev/null | awk '{print $5}' | grep -vE '^(127\.|\[::1\]|::1|\[::ffff:127)' | grep -vE '%lo' | sed -E 's/.*://' | sort -un | tr '\n' ' ')
-  z=$(firewall-cmd --get-default-zone 2>/dev/null)
+  z=$(active_zone)
   if [ -z "$ports" ]; then say "OK No network doors open|No program is waiting for connections from other computers"
   elif [ "$z" = monster-public ]; then say "OK The firewall keeps network doors closed|Programs listen on: $ports, but Public blocks them"
   else say "STEP Network doors open: $ports"; say "WARN Some programs accept connections from your network|Open doors: $ports"
@@ -324,9 +334,23 @@ fix)
   case "$id" in
     yesterday-go) pkexec rpm-ostree rollback >/dev/null 2>&1 && say "OK The previous system will start next time: restart to finish" || say "FAIL Going back was cancelled or didn't work" ;;
     steam) flatpak install -y --noninteractive flathub com.valvesoftware.Steam >/dev/null 2>&1 && say "OK Steam installed" || say "FAIL Couldn't install Steam (check the internet)" ;;
-    protonplus) flatpak info com.vysp3r.ProtonPlus >/dev/null 2>&1 || flatpak install -y --noninteractive flathub com.vysp3r.ProtonPlus >/dev/null 2>&1
-                if flatpak info com.vysp3r.ProtonPlus >/dev/null 2>&1; then flatpak run com.vysp3r.ProtonPlus >/dev/null 2>&1 & disown; say "OK ProtonPlus is open: pick Steam → GE-Proton → Install, then restart Steam"
-                else say "FAIL Couldn't install ProtonPlus (check the internet)"; fi ;;
+    protonge)
+      for d in "$HOME/.steam/steam" "$HOME/.local/share/Steam" "$HOME/.var/app/com.valvesoftware.Steam/data/Steam"; do [ -d "$d" ] && { SD="$d"; break; }; done
+      [ -n "${SD:-}" ] || { say "FAIL Steam hasn't been opened yet"; say "TIP Open Steam once and sign in, then press this again"; exit 0; }
+      C="$SD/compatibilitytools.d"; mkdir -p "$C"
+      rel=$(curl -fsSL --max-time 20 https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest) || { say "FAIL Couldn't reach GitHub (check the internet)"; exit 0; }
+      url=$(echo "$rel" | python3 -c 'import json,sys;a=json.load(sys.stdin)["assets"];print(next(x["browser_download_url"] for x in a if x["name"].endswith(".tar.gz")))' 2>/dev/null)
+      sum=$(echo "$rel" | python3 -c 'import json,sys;a=json.load(sys.stdin)["assets"];print(next(x["browser_download_url"] for x in a if x["name"].endswith(".sha512sum")))' 2>/dev/null)
+      name=$(basename "${url%.tar.gz}")
+      [ -n "$url" ] || { say "FAIL Couldn't find the Proton-GE download"; exit 0; }
+      [ -d "$C/$name" ] && { say "OK $name is already installed|Restart Steam, then pick it under Properties → Compatibility"; exit 0; }
+      T=$(mktemp -d); trap 'rm -rf "$T"' EXIT
+      curl -fsSL --retry 3 -o "$T/ge.tar.gz" "$url" || { say "FAIL The download stopped (check the internet)"; exit 0; }
+      if [ -n "$sum" ] && curl -fsSL -o "$T/ge.sha512sum" "$sum"; then
+        want=$(awk '{print $1}' "$T/ge.sha512sum"); got=$(sha512sum "$T/ge.tar.gz" | awk '{print $1}')
+        [ "$want" = "$got" ] || { say "FAIL The download was damaged, nothing was installed"; exit 0; }
+      fi
+      tar -xzf "$T/ge.tar.gz" -C "$C" && say "OK Installed $name|Restart Steam, then right-click a game → Properties → Compatibility → pick $name" || say "FAIL Couldn't unpack Proton-GE" ;;
     perf) powerprofilesctl set performance 2>/dev/null && say "OK Power mode: Performance" || say "FAIL Couldn't change the power mode" ;;
     space) exec bash "$0" space ;;
     restart-app|reset-app|repair-app)

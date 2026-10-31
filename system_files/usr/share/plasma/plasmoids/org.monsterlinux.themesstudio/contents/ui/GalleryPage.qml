@@ -16,6 +16,34 @@ QQC2.ScrollView {
 
         PageHeader { studio: page.studio; title: "Theme Gallery"; note: "Pick a look to try it on the stage. You can change anything about it in the other sections before you apply it." }
 
+        // ---- your own saved themes ----
+        ColumnLayout {
+            Layout.fillWidth: true
+            spacing: 10
+            RowLayout {
+                spacing: 10
+                Text { text: "My Themes"; color: page.studio.ink; font.family: page.studio.uiFont; font.pixelSize: 17; font.bold: true }
+                Text { text: page.studio.myThemes.length + (page.studio.myThemes.length === 1 ? " THEME" : " THEMES"); color: page.studio.dim; font.family: "monospace"; font.pixelSize: 10; font.letterSpacing: 1.5 }
+                Item { Layout.fillWidth: true }
+                StudioButton { studio: page.studio; text: "Save current as new"; onClicked: page.studio.openSave() }
+            }
+            Text {
+                Layout.fillWidth: true; wrapMode: Text.WordWrap
+                text: page.studio.myThemes.length ? "Your saved looks. Try one, apply it, rename it or delete it."
+                                                  : "Nothing saved yet. Change anything you like, then press Save theme and give it a name. It shows up here."
+                color: page.studio.dim; font.family: page.studio.uiFont; font.pixelSize: 12
+            }
+            Flow {
+                Layout.fillWidth: true
+                spacing: 12
+                visible: page.studio.myThemes.length > 0
+                Repeater {
+                    model: page.studio.myThemes
+                    delegate: ThemeCard { required property var modelData; studio: page.studio; item: modelData; mine: true }
+                }
+            }
+        }
+
         Repeater {
             model: T.GROUPS
             delegate: ColumnLayout {
@@ -34,40 +62,7 @@ QQC2.ScrollView {
                     spacing: 12
                     Repeater {
                         model: grp.modelData.items
-                        delegate: Rectangle {
-                            id: card
-                            required property var modelData
-                            readonly property bool current: page.studio.themeName === modelData.n
-                            width: 228; height: 262; radius: 10
-                            color: page.studio.rack2
-                            border.color: current ? page.studio.led : page.studio.line
-                            border.width: current ? 2 : 1
-                            clip: true
-                            ColumnLayout {
-                                anchors.fill: parent; anchors.margins: 1; spacing: 0
-                                Image {
-                                    Layout.fillWidth: true; Layout.preferredHeight: 142
-                                    source: page.studio.pkg + "/thumbs/" + card.modelData.thumb
-                                    fillMode: Image.PreserveAspectCrop; asynchronous: true
-                                    sourceSize.width: 456
-                                }
-                                ColumnLayout {
-                                    Layout.fillWidth: true; Layout.fillHeight: true; Layout.margins: 10; spacing: 4
-                                    RowLayout {
-                                        Layout.fillWidth: true
-                                        Text { Layout.fillWidth: true; text: card.modelData.n; color: page.studio.ink; font.family: page.studio.uiFont; font.pixelSize: 14; font.bold: true; elide: Text.ElideRight }
-                                        Text { text: card.modelData.tag.toUpperCase(); color: page.studio.dim; font.family: "monospace"; font.pixelSize: 9 }
-                                    }
-                                    Text { Layout.fillWidth: true; Layout.fillHeight: true; text: card.modelData.d; color: page.studio.dim; font.family: page.studio.uiFont; font.pixelSize: 11; wrapMode: Text.WordWrap; elide: Text.ElideRight; maximumLineCount: 2 }
-                                    RowLayout {
-                                        Layout.fillWidth: true; spacing: 6
-                                        StudioButton { studio: page.studio; text: card.current ? "On stage" : "Try it"; selected: card.current; Layout.fillWidth: true; onClicked: page.studio.loadTheme(card.modelData) }
-                                        StudioButton { studio: page.studio; text: "Apply"; primary: true; Layout.fillWidth: true; enabled: !page.studio.applying
-                                            onClicked: { page.studio.loadTheme(card.modelData); page.studio.applyAll() } }
-                                    }
-                                }
-                            }
-                        }
+                        delegate: ThemeCard { required property var modelData; studio: page.studio; item: modelData }
                     }
                 }
             }

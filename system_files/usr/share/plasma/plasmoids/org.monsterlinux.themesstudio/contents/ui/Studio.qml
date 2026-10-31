@@ -51,6 +51,38 @@ Rectangle {
     ]
     property int page: 0
 
+    // ---------- your own saved themes (~/.local/share/monster-themes) ----------
+    property var myThemes: []
+    function slug(n) { return ("" + n).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "my-theme" }
+    function refreshMine() {
+        run(["mythemes", "list"], out => {
+            const L = []
+            out.split("\n").forEach(l => { try { const t = JSON.parse(l); if (t && t.n && t.state) L.push(t) } catch (e) {} })
+            L.sort((a, b) => (b.at || 0) - (a.at || 0))
+            myThemes = L
+        })
+    }
+    function findMine(name) { for (const t of myThemes) if (t.n.toLowerCase() === ("" + name).toLowerCase()) return t; return null }
+    function saveTheme(name, cb) {
+        name = ("" + name).trim(); if (!name) return
+        const t = { n: name, id: slug(name), at: Date.now(), state: JSON.parse(JSON.stringify(st)) }
+        run(["mythemes", "save", t.id, JSON.stringify(t)], () => { themeName = name; refreshMine(); if (cb) cb() })
+    }
+    function renameTheme(t, name, cb) {
+        name = ("" + name).trim(); if (!name || name === t.n) { if (cb) cb(); return }
+        const n = { n: name, id: slug(name), at: t.at || Date.now(), state: t.state }
+        run(["mythemes", "save", n.id, JSON.stringify(n)], () => {
+            const done = () => { if (themeName === t.n) themeName = name; refreshMine(); if (cb) cb() }
+            if (n.id !== t.id) run(["mythemes", "delete", t.id], done); else done()
+        })
+    }
+    function deleteTheme(t) { run(["mythemes", "delete", t.id], () => refreshMine()) }
+    function loadMine(t) { snapshot(); st = JSON.parse(JSON.stringify(t.state)); themeName = t.n }
+    function thumbOf(t) {
+        const w = t.state && (t.state.wallThumb || t.state.wallPath)
+        return w ? (w.startsWith("file:") ? w : "file://" + w) : pkg + "/thumbs/monster-gloop.png"
+    }
+
     // ---------- small color helpers ----------
     function hx(c) { return ("" + c).slice(0, 7) }
     function parse(h) { const n = parseInt(hx(h).slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255] }
@@ -165,6 +197,48 @@ Rectangle {
 
     Component.onCompleted: {
         sh("printf %s \"$HOME\"; mkdir -p \"$HOME/.local/share/icons/monster-custom\"", out => studio.home = out)
+        refreshMine()
+    }
+
+    // ---------- Save theme box ----------
+    function openSave() {
+        nameField.text = (themeName === "My theme" || T.GROUPS.some(g => g.items.some(i => i.n === themeName))) ? "" : themeName
+        saveBox.open(); nameField.forceActiveFocus(); nameField.selectAll()
+    }
+    QQC2.Popup {
+        id: saveBox
+        parent: QQC2.Overlay.overlay
+        anchors.centerIn: parent
+        width: 420; modal: true; focus: true; padding: 20
+        background: Rectangle { radius: 12; color: studio.rack; border.color: studio.led }
+        QQC2.Overlay.modal: Rectangle { color: "#a0000000" }
+        contentItem: ColumnLayout {
+            spacing: 12
+            Text { text: "Save this theme"; color: studio.ink; font.family: studio.uiFont; font.pixelSize: 17; font.bold: true }
+            Text { Layout.fillWidth: true; wrapMode: Text.WordWrap; color: studio.dim; font.family: studio.uiFont; font.pixelSize: 12
+                text: "Give it a name. It goes into My Themes at the top of the Theme Gallery, so you can switch back to it any time." }
+            QQC2.TextField {
+                id: nameField
+                Layout.fillWidth: true
+                placeholderText: "For example: Night Gaming"
+                maximumLength: 40
+                color: studio.ink; font.family: studio.uiFont; font.pixelSize: 14
+                background: Rectangle { radius: 8; color: studio.room; border.color: nameField.activeFocus ? studio.led : studio.line; implicitHeight: 40 }
+                onAccepted: if (text.trim()) { studio.saveTheme(text); saveBox.close() }
+            }
+            Text {
+                visible: nameField.text.trim() !== "" && studio.findMine(nameField.text) !== null
+                text: "You already have a theme with this name. Saving replaces it."
+                color: "#e8b03d"; font.family: studio.uiFont; font.pixelSize: 12; Layout.fillWidth: true; wrapMode: Text.WordWrap
+            }
+            RowLayout {
+                Layout.fillWidth: true; spacing: 8
+                Item { Layout.fillWidth: true }
+                StudioButton { studio: studio; text: "Cancel"; onClicked: saveBox.close() }
+                StudioButton { studio: studio; text: studio.findMine(nameField.text) ? "Replace" : "Save"; primary: true; enabled: nameField.text.trim() !== ""
+                    onClicked: { studio.saveTheme(nameField.text); saveBox.close() } }
+            }
+        }
     }
 
     // =================== layout ===================
@@ -205,6 +279,7 @@ Rectangle {
                     }
                 }
                 StudioButton { studio: studio; text: "Undo"; enabled: studio.undoStack.length > 0; onClicked: studio.undo() }
+                StudioButton { studio: studio; text: "Save theme"; onClicked: studio.openSave() }
                 StudioButton { studio: studio; text: studio.applying ? "Applying..." : "Apply to my PC"; primary: true; enabled: !studio.applying; onClicked: studio.applyAll() }
             }
         }

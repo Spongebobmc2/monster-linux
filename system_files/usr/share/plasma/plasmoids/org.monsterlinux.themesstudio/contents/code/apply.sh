@@ -14,6 +14,7 @@
 #   apply.sh apps                                    list apps: id|name|icon|desktop-file
 #   apply.sh classic <show|hide>                     show or hide KDE's own appearance pages
 #   apply.sh list <cursors|iconthemes|wallpapers>
+#   apply.sh mythemes <list|save ID JSON|delete ID>   your own saved themes
 
 set -u
 export PATH="$PATH:/usr/libexec:/usr/lib/libexec"
@@ -167,6 +168,15 @@ list)
                         if [ -d "$d/contents/images" ]; then ls -S "$d"/contents/images/* 2>/dev/null | head -n1
                         elif [ -f "$d" ]; then echo "$d"; fi
                     done ;;
+    esac
+    ;;
+mythemes)
+    D="$DATA/monster-themes"; mkdir -p "$D"
+    case "${1:-list}" in
+        list)   for f in "$D"/*.json; do [ -f "$f" ] && { tr -d '\n' < "$f"; echo; }; done ;;
+        save)   id=$(printf '%s' "$2" | tr -cd 'a-z0-9-'); [ -n "$id" ] || { fail "Theme name"; exit 0; }
+                printf '%s\n' "$3" > "$D/$id.json" && ok "Saved" || fail "Couldn't save the theme" ;;
+        delete) id=$(printf '%s' "$2" | tr -cd 'a-z0-9-'); rm -f "$D/$id.json"; ok "Deleted" ;;
     esac
     ;;
 *) echo "usage: see the top of this file" ;;

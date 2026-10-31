@@ -19,6 +19,7 @@ tasks.writeConfig("launchers", [
 ].join(","));
 
 panel.addWidget("org.kde.plasma.marginsseparator");
+panel.addWidget("org.monsterlinux.weather");     // Monster Weather
 panel.addWidget("org.monsterlinux.netfix");     // ✓ / ✗ Network Fix
 panel.addWidget("org.monsterlinux.lockdown");   // red Lockdown button
 panel.addWidget("org.kde.plasma.systemtray");

@@ -39,7 +39,7 @@ if [ ! -f "$CACHE" ] || ! grep -qx "BOOT=$BOOT" "$CACHE" || [ "${1:-}" = "--refr
 . "$CACHE"
 
 # ---- draw: one small box per item, two per row, at the top right ----
-F=$'\e[38;2;104;150;44m'; L=$'\e[38;2;168;224;58m'; K=$'\e[38;2;138;152;120m'; W=$'\e[38;2;232;238;224m'; Z=$'\e[0m'
+F=$'\e[38;2;58;84;34m'; L=$'\e[38;2;168;224;58m'; K=$'\e[38;2;138;152;120m'; W=$'\e[38;2;232;238;224m'; Z=$'\e[0m'
 short() { printf '%s' "$1" | sed -E 's/NVIDIA GeForce /NVIDIA /; s/AMD Radeon /Radeon /; s/Intel Core /Core /'; }
 items=()
 [ -n "$PC" ]    && items+=("PC|$PC")
@@ -53,19 +53,26 @@ items+=("Kernel|${KERN%.fc*}")
 
 cols=$(tput cols 2>/dev/null || echo 80)
 rep() { local s=""; for ((j=0;j<$2;j++)); do s+="$1"; done; printf '%s' "$s"; }
-top() { printf '%s' "$F╭─ $L$1$F $(rep ─ $(( $2 - ${#1} - 1 )))╮$Z"; }
+top() { printf '%s' "$F╭─ $K$1$F $(rep ─ $(( $2 - ${#1} - 1 )))╮$Z"; }
 mid() { printf '%s' "$F│$Z $W$1$(printf '%*s' $(( $2 - ${#1} )) '') $F│$Z"; }
 bot() { printf "%s" "$F╰$(rep ─ $(( $1 + 2 )))╯$Z"; }
 
-# ---- left: three buttons (clickable links that open a small help window) ----
-B=$'\e[48;2;140;194;42m\e[38;2;20;32;10m\e[1m'
+# ---- left: greeting and three buttons (clickable links that open a small help window) ----
+B=$'\e[48;2;140;194;42m\e[38;2;20;32;10m\e[1m'; E=$'\e[38;2;140;194;42m'
 link() { printf '\e]8;;monster-help://%s\e\\%s\e]8;;\e\\' "$1" "$2"; }
 bw=24
-btn() { local t="  ▸  $2"; printf '%s%s%s' "$B" "$(link "$1" "$t$(printf '%*s' $(( bw - ${#t} )) '')")" "$Z"; }
-LL=( "$(btn update 'Update')" "" "$(btn cheat 'Linux Cheat Sheet')" "" "$(btn howto 'Linux How To')" ""
-     "$K click a button, or type:$Z" "$W updatehelp$K · $W cheatsheet$K · $W howto$Z" )
-LW=$bw; (( LW < 34 )) && LW=34      # the hint line is 33 wide
-
+btn() { local t=" ▸  $2"; printf '%s▐%s%s%s▌%s' "$E" "$B" "$(link "$1" "$t$(printf '%*s' $(( bw - 2 - ${#t} )) '')")" "$Z$E" "$Z"; }
+h=$(date +%H); h=${h#0}; if (( h < 12 )); then hi="Good morning"; elif (( h < 17 )); then hi="Good afternoon"; else hi="Good evening"; fi
+up=$(uptime -p 2>/dev/null | sed 's/^up //; s/ hours\?/h/; s/ minutes\?/m/; s/ days\?/d/g; s/,//g')
+LL=( "$L$(printf '\e[1m')M O N S T E R   L I N U X$Z"
+     "$W$hi, ${USER:-friend}$Z"
+     "$K$(date '+%a %d %b · %H:%M')${up:+ · on for $up}$Z"
+     ""
+     "$(btn update 'Update')" "" "$(btn cheat 'Linux Cheat Sheet')" "" "$(btn howto 'Linux How To')"
+     ""
+     "$K click a button, or type$Z"
+     "$W updatehelp$K · $W cheatsheet$K · $W howto$Z" )
+LW=34
 # ---- right: the PC boxes, two per row ----
 w0=0; w1=0
 for i in "${!items[@]}"; do v=${items[$i]#*|}; k=${items[$i]%%|*}; n=$(( ${#v} > ${#k}+1 ? ${#v} : ${#k}+1 ))

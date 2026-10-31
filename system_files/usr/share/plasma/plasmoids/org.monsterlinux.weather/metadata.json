@@ -1,0 +1,14 @@
+{
+  "KPackageStructure": "Plasma/Applet",
+  "KPlugin": {
+    "Id": "org.monsterlinux.weather",
+    "Name": "Monster Weather",
+    "Description": "Weather on the taskbar: now, the next 12 hours and 7 days. Finds your town by itself.",
+    "Icon": "weather-few-clouds",
+    "Category": "Environment and Weather",
+    "Authors": [{ "Name": "Spongebobmc2" }],
+    "License": "GPL-2.0-or-later",
+    "Version": "1.0"
+  },
+  "X-Plasma-API-Minimum-Version": "6.0"
+}

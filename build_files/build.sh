@@ -169,3 +169,12 @@ gtk-update-icon-cache -f /usr/share/icons/Monster-Login >/dev/null 2>&1 || true
 gtk-update-icon-cache -f /usr/share/icons/hicolor >/dev/null 2>&1 || true
 systemctl enable monster-login-icons.service
 echo "::notice title=Login buttons::$(ls /usr/share/icons/Monster-Login/scalable/actions | tr '\n' ' ') · login user home: $(getent passwd plasmalogin | cut -d: -f6)"
+
+#### Monster Shield: firewall places (Home / Public) and ClamAV virus check
+chmod 755 /usr/share/plasma/plasmoids/org.monsterlinux.shield/contents/code/shield.sh /usr/libexec/monster-shield-daily
+dnf5 install -y clamav clamav-update || echo "::warning title=Monster Shield::ClamAV not installed"
+if command -v freshclam >/dev/null; then
+  sed -i 's/^Example/#Example/' /etc/freshclam.conf 2>/dev/null || true
+  systemctl enable clamav-freshclam.service || true      # keeps the virus list fresh
+  echo "::notice title=Monster Shield::$(rpm -q clamav clamav-update | tr '\n' ' ') · zones: $(ls /usr/lib/firewalld/zones | grep monster | tr '\n' ' ')"
+fi

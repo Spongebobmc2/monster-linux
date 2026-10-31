@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Monster Shield
+GenericName=Firewall and Virus Check
+Comment=Turn on the firewall and check for viruses, one click each
+Icon=org.monsterlinux.shield
+Exec=plasmawindowed org.monsterlinux.shield
+Keywords=firewall;virus;antivirus;clamav;security;protect;safe;scan;malware;
+Categories=Qt;KDE;System;Security;

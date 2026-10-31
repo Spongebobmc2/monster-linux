@@ -1,0 +1,10 @@
+[Unit]
+Description=Monster Shield daily virus check of Downloads
+
+[Timer]
+OnCalendar=daily
+RandomizedDelaySec=1h
+Persistent=true
+
+[Install]
+WantedBy=timers.target

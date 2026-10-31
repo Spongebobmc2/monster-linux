@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<zone>
+  <short>Monster Home</short>
+  <description>For your home network. Your phone, printer, other PCs and Steam streaming can find this PC. Nothing else can connect in.</description>
+  <service name="dhcpv6-client"/>
+  <service name="mdns"/>
+  <port protocol="udp" port="137-138"/>
+  <port protocol="tcp" port="1714-1764"/>
+  <port protocol="udp" port="1714-1764"/>
+  <port protocol="udp" port="27031-27036"/>
+  <port protocol="tcp" port="27036-27037"/>
+</zone>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<zone>
+  <short>Monster Public</short>
+  <description>Best protection for cafés, hotels, airports and school. Nothing on the network can connect to this PC. The internet still works normally.</description>
+  <service name="dhcpv6-client"/>
+</zone>

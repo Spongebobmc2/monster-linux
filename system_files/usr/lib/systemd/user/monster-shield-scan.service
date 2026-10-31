@@ -1,0 +1,8 @@
+[Unit]
+Description=Monster Shield daily virus check of Downloads
+
+[Service]
+Type=oneshot
+Nice=15
+IOSchedulingClass=idle
+ExecStart=/usr/libexec/monster-shield-daily

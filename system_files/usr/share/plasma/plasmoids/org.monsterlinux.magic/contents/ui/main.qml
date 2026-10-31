@@ -6,9 +6,9 @@ import org.kde.plasma.plasmoid
 PlasmoidItem {
     preferredRepresentation: fullRepresentation
     fullRepresentation: Magic {
-        Layout.preferredWidth: 1240
-        Layout.preferredHeight: 800
-        Layout.minimumWidth: 1000
-        Layout.minimumHeight: 660
+        Layout.preferredWidth: 1060
+        Layout.preferredHeight: 700
+        Layout.minimumWidth: 920
+        Layout.minimumHeight: 620
     }
 }

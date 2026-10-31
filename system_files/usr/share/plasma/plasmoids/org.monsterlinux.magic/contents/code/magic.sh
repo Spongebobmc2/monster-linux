@@ -222,9 +222,8 @@ space)
   say "STEP Free space before: $(human "$b")"
   flatpak uninstall --user --unused -y --noninteractive >/dev/null 2>&1 && say "OK Removed unused app parts (yours)"
   rm -rf "$HOME/.cache/thumbnails" 2>/dev/null && say "OK Cleared picture previews (they rebuild by themselves)"
-  if pkexec bash -c 'flatpak uninstall --system --unused -y --noninteractive >/dev/null 2>&1; journalctl --vacuum-time=14d >/dev/null 2>&1; rpm-ostree cleanup -m >/dev/null 2>&1; true'; then
-    say "OK Removed unused shared app parts, logs older than 2 weeks and update caches"
-  else say "WARN Skipped the system part (password box was cancelled)"; say "FIX space|Try again|Runs the system clean-up again"; fi
+  r=$(pkexec /usr/libexec/monster-root clean 2>/dev/null)
+  [ -n "$r" ] && echo "$r" || { say "WARN Skipped the system part|The clean-up helper didn't answer"; say "FIX space|Try again|Runs the system clean-up again"; }
   a=$(freebytes); d=$((a-b)); [ "$d" -lt 0 ] && d=0
   tr=$(du -sb "$HOME/.local/share/Trash" 2>/dev/null | cut -f1); tr=${tr:-0}
   [ "$tr" -gt $((500*1024*1024)) ] && { say "WARN The Trash holds $(human "$tr")"; say "FIX empty-trash|Empty the Trash|Deletes what's in the Trash for good"; }
@@ -236,70 +235,86 @@ space)
 
 # ---------------------------------------------------------------------------- 9
 safe)
+  SHIELD=/usr/share/plasma/plasmoids/org.monsterlinux.shield/contents/code/shield.sh
   if systemctl is-active --quiet firewalld; then
-    say "OK Firewall is on"
+    say "OK Firewall is on|Blocks other computers from connecting to yours"
     z=$(firewall-cmd --get-default-zone 2>/dev/null)
-    case "$z" in monster-home|monster-public) say "OK Firewall place: ${z#monster-}";;
-      *) say "WARN Firewall isn't set to Home or Public yet"; say "FIX fw-home|Set to Home|Uses the Home setting (best for home)";; esac
-  else say "FAIL Firewall is off"; say "FIX fw-home|Turn firewall on|Turns it on with the Home setting"; fi
+    case "$z" in monster-home) say "OK Firewall place: Home|Your phone, printer and other PCs can find this PC; nothing else can";;
+                 monster-public) say "OK Firewall place: Public|Nothing on the network can connect to this PC";;
+      *) say "WARN Firewall isn't set to Home or Public yet|Without a place it uses Bazzite's looser default"; say "FIX fw-home|Set to Home|Uses the Home setting (best for home). No password needed";; esac
+  else say "FAIL Firewall is off|Other computers on your network could try to connect to yours"; say "FIX fw-home|Turn firewall on|Turns it on with the Home setting. No password needed"; fi
   up=$(rpm-ostree upgrade --check 2>/dev/null | grep -iE 'AvailableUpdate|Version:' | head -1)
-  if [ -n "$up" ]; then say "WARN A system update is waiting"; say "FIX update|Update now|Opens Monster Updater and starts the update"; else say "OK System is up to date"; fi
+  if [ -n "$up" ]; then say "WARN A system update is waiting|Updates close security holes"; say "FIX update|Update now|Opens Monster Updater and starts the update"
+  else say "OK System is up to date|You have the newest Monster Linux"; fi
   sb=$(mokutil --sb-state 2>/dev/null | head -1)
-  case "$sb" in *enabled*) say "OK Secure Boot is on";;
-    *) say "WARN Secure Boot is off"; say "TIP Secure Boot blocks hidden start-up malware. Press Set up Secure Boot, restart, choose 'Enroll MOK' (password: universalblue), then turn Secure Boot on in the BIOS"
-       say "FIX secureboot|Set up Secure Boot|Prepares the key the BIOS needs (opens a terminal)";; esac
+  case "$sb" in *enabled*) say "OK Secure Boot is on|Stops hidden malware that loads before Linux starts";;
+    *) say "WARN Secure Boot is off|Secure Boot stops hidden malware that loads before Linux starts"
+       say "TIP Press Set up Secure Boot, restart, choose 'Enroll MOK' (password: universalblue), then turn Secure Boot on in the BIOS"
+       say "FIX secureboot|Set up Secure Boot|Prepares the key the BIOS needs (opens a terminal; asks for your password)";; esac
   se=$(getenforce 2>/dev/null)
-  if [ "$se" = Enforcing ]; then say "OK SELinux protection is on"
-  else say "WARN SELinux protection is ${se:-unknown}"; say "FIX selinux|Turn SELinux on|Switches it to Enforcing now and after restarts"; fi
+  if [ "$se" = Enforcing ]; then say "OK SELinux protection is on|Keeps each program inside its own fence"
+  else say "WARN SELinux protection is ${se:-unknown}|SELinux keeps each program inside its own fence"; say "FIX selinux|Turn SELinux on|Switches it to Enforcing (asks for your password: it's a big change)"; fi
   ports=$(ss -tulnH 2>/dev/null | awk '{print $5}' | grep -vE '^(127\.|\[::1\]|::1|\[::ffff:127)' | grep -vE '%lo' | sed -E 's/.*://' | sort -un | tr '\n' ' ')
-  if [ -z "$ports" ]; then say "OK No network doors open to other computers"
-  else say "STEP Network doors open: $ports"
-       z=$(firewall-cmd --get-default-zone 2>/dev/null)
-       [ "$z" = monster-public ] && say "OK The firewall keeps those doors closed (Public)" || { say "WARN Some network doors are open to your network"; say "FIX fw-public|Close them (Public)|Switches the firewall to Public: nothing can connect in"; }; fi
+  z=$(firewall-cmd --get-default-zone 2>/dev/null)
+  if [ -z "$ports" ]; then say "OK No network doors open|No program is waiting for connections from other computers"
+  elif [ "$z" = monster-public ]; then say "OK The firewall keeps network doors closed|Programs listen on: $ports, but Public blocks them"
+  else say "STEP Network doors open: $ports"; say "WARN Some programs accept connections from your network|Open doors: $ports"
+       say "FIX fw-public|Close them (Public)|Switches the firewall to Public: nothing can connect in. No password needed"; fi
   if command -v clamscan >/dev/null; then
-    last=$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1])).get("at",0))' "$HOME/.local/share/monster-shield/last.json" 2>/dev/null || echo 0)
-    if [ "$(( $(date +%s) - ${last:-0} ))" -lt $((7*86400)) ]; then say "OK Virus check ran this week"
-    else say "WARN No virus check in the last 7 days"; say "FIX virus|Check now|Opens Monster Shield for a Quick check"; fi
+    last=$(python3 -c 'import json,sys
+t=0
+for f in sys.argv[1:]:
+  try: t=max(t,int(json.load(open(f)).get("at",0)))
+  except Exception: pass
+print(t)' "$HOME/.local/share/monster-shield/last.json" "$HOME/.local/share/monster-shield/daily.json" "$HOME/.local/share/monster-shield/last-run.json")
+    if [ "$(( $(date +%s) - ${last:-0} ))" -lt $((7*86400)) ]; then say "OK Virus check ran $(( ($(date +%s) - last) / 86400 )) day(s) ago|Monster Shield's scans and the daily Downloads check both count"
+    else say "WARN No virus check in the last 7 days|A quick check looks at Downloads, Desktop and Documents"; say "FIX virus|Check now|Runs a Quick virus check right here (1-5 minutes). No password needed"; fi
   fi
-  [ -d "$HOME/Quarantine" ] && say "OK Quarantine folder ready" || { say "WARN Quarantine folder not set up"; say "FIX quarantine|Make it|Creates the locked Quarantine folder"; }
+  [ -d "$HOME/Quarantine" ] && say "OK Quarantine folder ready|Where suspicious files are locked away" || { say "WARN Quarantine folder not set up|Suspicious downloads get locked away there"; say "FIX quarantine|Make it|Creates the locked Quarantine folder"; }
   say "PROOF Safety check done" ;;
 
 # ---------------------------------------------------------------------------- 11
 drive)
-  ROOTPART='
-    for d in $(lsblk -dno NAME,TYPE | awk "\$2==\"disk\"{print \$1}" | grep -vE "^(zram|loop|sr)"); do
-      dev=/dev/$d; model=$(lsblk -dno MODEL "$dev" | xargs); [ -n "$model" ] || model=$d
-      h=$(smartctl -H "$dev" 2>/dev/null | grep -iE "overall-health|SMART Health Status" | sed "s/.*: *//" | xargs)
-      case "$h" in PASSED|OK) echo "OK $model: health $h";; "") echo "STEP $model: no health report (USB drives often hide it)";; *) echo "FAIL $model: health $h"; echo "TIP Back up your files now and plan to replace this drive";; esac
-      A=$(smartctl -A "$dev" 2>/dev/null)
-      if [ "${d#nvme}" != "$d" ]; then
-        used=$(echo "$A" | awk -F: "/Percentage Used/{gsub(/ /,\"\",\$2);print \$2}"); n=${used%\%}
-        temp=$(echo "$A" | awk -F: "/^Temperature:/{gsub(/[^0-9]/,\"\",\$2);print \$2}")
-        echo "STEP $model: wear used ${used:-?}, temperature ${temp:-?} C"
-        if [ -n "$n" ] && [ "$n" -ge 80 ] 2>/dev/null; then echo "FAIL $model: ${used} of its life used"; echo "TIP Back up and plan a replacement"
-        elif [ -n "$n" ] && [ "$n" -ge 50 ] 2>/dev/null; then echo "WARN $model: ${used} of its life used"; echo "TIP Keep backups up to date"; fi
-        [ -n "$temp" ] && [ "$temp" -ge 70 ] 2>/dev/null && { echo "WARN $model runs hot (${temp} C)"; echo "TIP Add a heatsink or more case airflow"; }
-      else
-        realloc=$(echo "$A" | awk "/Reallocated_Sector_Ct/{print \$10}")
-        [ -n "$realloc" ] && [ "$realloc" -gt 0 ] 2>/dev/null && { echo "FAIL $model: $realloc bad sectors"; echo "TIP Back up your files now"; }
-      fi
-    done
-    systemctl enable --now fstrim.timer >/dev/null 2>&1 && echo "OK Weekly TRIM is on"
-    fstrim -av 2>/dev/null | sed "s/^/STEP TRIM /"
-    true'
   command -v smartctl >/dev/null || say "WARN The drive health tool (smartctl) is missing"
-  if out=$(pkexec bash -c "$ROOTPART" 2>/dev/null); then echo "$out"
-  else say "WARN Drive health and TRIM were skipped (password box cancelled)"; say "FIX drive|Try again|Runs the drive check again"; fi
+  out=$(pkexec /usr/libexec/monster-root drive-check 2>/dev/null)
+  if [ -z "$out" ]; then say "WARN Couldn't read the drives|The drive check helper didn't answer"; say "FIX drive|Try again|Runs the drive check again"
+  else
+    model=""; used=""; temp=""
+    flush() {
+      [ -n "$model" ] || return
+      [ -n "$used" ] && { n=${used%\%}; if [ "$n" -ge 80 ] 2>/dev/null; then say "FAIL $model: ${used} of its life used|SSDs wear out slowly; at 80% plan a replacement"; say "TIP Back up and plan to replace this drive"
+        elif [ "$n" -ge 50 ] 2>/dev/null; then say "WARN $model: ${used} of its life used|Still fine, but keep backups up to date"; else say "OK $model: ${used:-0%} of its life used|An SSD lasts until about 100%"; fi; }
+      [ -n "$temp" ] && { if [ "$temp" -ge 70 ] 2>/dev/null; then say "WARN $model runs hot (${temp} °C)|Over 70 °C an SSD slows itself down"; say "TIP Add a heatsink or more case airflow"
+        else say "OK $model temperature: ${temp} °C|Under 70 °C is healthy"; fi; }
+      model=""; used=""; temp=""
+    }
+    while IFS= read -r l; do
+      case "$l" in
+        "DRIVE "*) flush; model=${l#DRIVE } ;;
+        "HEALTH "*) h=${l#HEALTH }; case "$h" in PASSED|OK) say "OK $model: health $h|The drive's own self-test says it's healthy";; *) say "FAIL $model: health $h|The drive itself reports a problem"; say "TIP Back up your files now";; esac ;;
+        "ATTR Percentage Used"*) used=$(echo "$l" | awk -F: '{gsub(/ /,"",$2);print $2}') ;;
+        "ATTR Temperature:"*) temp=$(echo "$l" | awk -F: '{gsub(/[^0-9]/,"",$2);print $2}') ;;
+        *Reallocated_Sector_Ct*) r=$(echo "$l" | awk '{print $NF}'); [ "$r" -gt 0 ] 2>/dev/null && { say "FAIL $model: $r bad sectors|Bad sectors mean the disk is wearing out"; say "TIP Back up your files now"; } ;;
+        "TRIMTIMER on") say "OK Weekly TRIM is on|Keeps SSDs fast by clearing deleted space" ;;
+        "TRIM "*) say "STEP ${l#TRIM }" ;;
+      esac
+    done <<< "$out"
+    flush
+  fi
   if command -v fwupdmgr >/dev/null; then
     fwupdmgr refresh >/dev/null 2>&1
     list=$(fwupdmgr get-updates --json 2>/dev/null | python3 -c 'import sys,json
 try: d=json.load(sys.stdin)
 except Exception: sys.exit(0)
 for dev in d.get("Devices",[]):
-  for r in dev.get("Releases",[])[:1]: print("%s: %s → %s" % (dev.get("Name","?"), dev.get("Version","?"), r.get("Version","?")))' 2>/dev/null)
-    if [ -n "$list" ]; then say "WARN $(echo "$list" | wc -l) firmware update(s) available"; echo "$list" | sed 's/^/STEP /'
-      say "FIX drive-firmware|Install firmware|Installs the firmware updates (restart afterwards)"
-    else say "OK Firmware is up to date"; fi
+  for r in dev.get("Releases",[])[:1]:
+    print("%s|%s → %s · %s" % (dev.get("Name","?"), dev.get("Version","?"), r.get("Version","?"), (r.get("Summary") or "").strip()))' 2>/dev/null)
+    if [ -n "$list" ]; then
+      n=$(echo "$list" | wc -l)
+      say "WARN $n firmware update(s) available: $(echo "$list" | cut -d'|' -f1 | paste -sd, | sed 's/,/, /g')|Firmware is the built-in software of your BIOS, drives and devices"
+      say "FIX drive-firmware|Install firmware|Opens a window that installs them; asks for your password, then restart"
+      echo "$list" | while IFS='|' read -r name rest; do say "STEP Firmware for $name: $rest"; say "OK Update ready for $name|$rest"; done
+    else say "OK Firmware is up to date|The built-in software of your BIOS, drives and devices"; fi
   fi
   say "PROOF Drive check done" ;;
 
@@ -336,11 +351,10 @@ fix)
     sound) systemctl --user restart pipewire pipewire-pulse wireplumber 2>/dev/null; sleep 2
            [ -n "$(pactl list short sinks 2>/dev/null)" ] && say "OK Sound is back: $(pactl get-default-sink)" || { say "FAIL Still no sound output"; say "TIP Check the cable or pick the output in the sound icon on the taskbar"; } ;;
     bluetooth) rfkill unblock bluetooth 2>/dev/null
-               if ! bluetoothctl power on 2>/dev/null | grep -q succeeded; then pkexec systemctl restart bluetooth >/dev/null 2>&1; sleep 2; bluetoothctl power on >/dev/null 2>&1; fi
+               if ! bluetoothctl power on 2>/dev/null | grep -q succeeded; then pkexec /usr/libexec/monster-root bt-restart >/dev/null 2>&1; sleep 2; bluetoothctl power on >/dev/null 2>&1; fi
                bluetoothctl show 2>/dev/null | grep -q "Powered: yes" && say "OK Bluetooth is on" || say "FAIL Bluetooth is still off: restart the PC" ;;
     printers) (systemsettings kcm_printer_manager || system-config-printer) >/dev/null 2>&1 & disown; say "OK Printer page opened: press Add Printer" ;;
-    fast) pkexec bash -c 'systemctl disable NetworkManager-wait-online.service >/dev/null 2>&1; grub2-editenv - set menu_auto_hide=1 >/dev/null 2>&1; true' \
-            && say "OK Start-up no longer waits for the network; boot menu hidden (hold Shift to see it). Restart and press Start Fast again" || say "FAIL Cancelled: nothing was changed" ;;
+    fast) pkexec /usr/libexec/monster-root boot-fast; say "TIP Restart, then press Start Fast again to see the new time" ;;
     empty-trash) rm -rf "$HOME/.local/share/Trash/files/"* "$HOME/.local/share/Trash/info/"* 2>/dev/null; say "OK Trash emptied" ;;
     open-downloads) dolphin --new-window "$HOME/Downloads" >/dev/null 2>&1 & disown; say "OK Downloads opened (sort by size: View → Sort By → Size)" ;;
     fw-home|fw-public)
@@ -350,10 +364,23 @@ fix)
     update) (plasmawindowed org.monsterlinux.updater) >/dev/null 2>&1 & disown; say "OK Monster Updater opened: press Update now" ;;
     secureboot) term "ujust enroll-secure-boot-key"; say "OK Follow the steps in the terminal, then restart and choose 'Enroll MOK'" ;;
     selinux) pkexec bash -c 'setenforce 1; sed -i "s/^SELINUX=.*/SELINUX=enforcing/" /etc/selinux/config' >/dev/null 2>&1 && say "OK SELinux protection is on" || say "FAIL Cancelled: nothing was changed" ;;
-    virus) (plasmawindowed org.monsterlinux.shield) >/dev/null 2>&1 & disown; say "OK Monster Shield opened: press Quick check" ;;
+    virus)
+      SH=/usr/share/plasma/plasmoids/org.monsterlinux.shield/contents/code/shield.sh
+      command -v clamscan >/dev/null || { say "FAIL The virus check isn't installed"; exit 0; }
+      db=$(ls /var/lib/clamav/daily.c?d 2>/dev/null | head -1)
+      if [ -z "$db" ] || [ $(( $(date +%s) - $(stat -c %Y "$db") )) -gt $((8*86400)) ]; then bash "$SH" update-db >/dev/null 2>&1; fi
+      bash "$SH" scan quick >/dev/null 2>&1
+      for i in $(seq 1 900); do st=$(bash "$SH" scan-status 2>/dev/null); echo "$st" | grep -q '"done": null' || break; sleep 2; done
+      n=$(echo "$st" | python3 -c 'import json,sys
+try: d=json.load(sys.stdin); print(len(d.get("found",[])), d.get("scanned",0))
+except Exception: print("? 0")')
+      set -- $n
+      if [ "$1" = 0 ]; then say "OK Quick virus check done: no viruses in $2 files"
+      else say "FAIL Found $1 bad file(s)"; say "TIP Open Monster Shield and press Lock them away"; fi ;;
     quarantine) mkdir -p "$HOME/Quarantine" && chmod 700 "$HOME/Quarantine" && say "OK Quarantine folder made (only you can open it)" ;;
     drive) exec bash "$0" drive ;;
-    drive-firmware) fwupdmgr update -y --no-reboot-check >/dev/null 2>&1 && say "OK Firmware installed: restart your PC to finish" || say "FAIL Firmware update was cancelled or didn't work" ;;
+    drive-firmware) term "echo 'Installing firmware updates. Your password will be asked.'; echo; fwupdmgr update; echo; echo 'If it says a restart is needed, restart your PC to finish.'"
+                    say "OK Firmware installer opened in a window|Follow it there; restart afterwards if it says so" ;;
     *) say "FAIL Unknown fix" ;;
   esac ;;
 

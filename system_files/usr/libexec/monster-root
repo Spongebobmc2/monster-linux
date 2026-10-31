@@ -1,0 +1,47 @@
+#!/usr/bin/bash
+# Everyday Monster Magic / Monster Shield jobs that need root but change nothing important.
+# Allowed without a password for admin users at the PC (see /etc/polkit-1/rules.d/50-monster-lockdown.rules).
+# Big changes (going back a system version, firmware, turning the firewall OFF, SELinux,
+# Secure Boot) are NOT here, so they still ask for your password.
+# Every job is fixed: arguments are checked against a short list, nothing else can run.
+set -u
+case "${1:-}" in
+  fw-on)
+    systemctl enable --now firewalld >/dev/null 2>&1 && echo "OK Firewall is on" || echo "FAIL Firewall didn't start" ;;
+  fw-zone)
+    case "${2:-}" in home|public) ;; *) echo "FAIL Unknown place"; exit 1;; esac
+    Z="monster-$2"
+    systemctl enable --now firewalld >/dev/null 2>&1
+    firewall-cmd --reload >/dev/null 2>&1
+    firewall-cmd --set-default-zone="$Z" >/dev/null || { echo "FAIL Firewall not changed"; exit 1; }
+    nmcli -g UUID,TYPE,DEVICE con show --active | while IFS=: read -r u t d; do
+      case "$t" in loopback|bridge|tun|wireguard) continue;; esac
+      nmcli con mod "$u" connection.zone "$Z" >/dev/null 2>&1
+      [ -n "$d" ] && firewall-cmd --zone="$Z" --change-interface="$d" >/dev/null 2>&1
+    done
+    echo "OK Firewall set to $2" ;;
+  freshclam)
+    command -v freshclam >/dev/null || { echo "FAIL Virus check is not installed"; exit 1; }
+    freshclam --quiet >/dev/null 2>&1 && echo "OK Virus list updated" || echo "FAIL Couldn't update the virus list (check the internet)" ;;
+  drive-check)
+    for d in $(lsblk -dno NAME,TYPE | awk '$2=="disk"{print $1}' | grep -vE '^(zram|loop|sr)'); do
+      dev=/dev/$d; model=$(lsblk -dno MODEL "$dev" | xargs); [ -n "$model" ] || model=$d
+      echo "DRIVE $model"
+      smartctl -H "$dev" 2>/dev/null | grep -iE "overall-health|SMART Health Status" | sed "s/.*: */HEALTH /"
+      smartctl -A "$dev" 2>/dev/null | grep -E "Percentage Used|^Temperature:|Reallocated_Sector_Ct|Media and Data Integrity Errors" | sed 's/^/ATTR /'
+    done
+    systemctl enable --now fstrim.timer >/dev/null 2>&1 && echo "TRIMTIMER on"
+    fstrim -av 2>/dev/null | sed 's/^/TRIM /' ;;
+  clean)
+    flatpak uninstall --system --unused -y --noninteractive >/dev/null 2>&1
+    journalctl --vacuum-time=14d >/dev/null 2>&1
+    rpm-ostree cleanup -m >/dev/null 2>&1
+    echo "OK Removed unused shared app parts, logs older than 2 weeks and update caches" ;;
+  boot-fast)
+    systemctl disable NetworkManager-wait-online.service >/dev/null 2>&1
+    grub2-editenv - set menu_auto_hide=1 >/dev/null 2>&1
+    echo "OK Start-up no longer waits for the network; boot menu hidden (hold Shift to see it)" ;;
+  bt-restart)
+    systemctl restart bluetooth >/dev/null 2>&1 && echo "OK Bluetooth service restarted" ;;
+  *) echo "FAIL Not an allowed job"; exit 1 ;;
+esac

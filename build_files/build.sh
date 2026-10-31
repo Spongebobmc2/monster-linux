@@ -164,7 +164,7 @@ echo "::notice title=Monster Updater::Hid other updater entries:${HID:- none fou
 fc-cache -f /usr/share/fonts/monster >/dev/null 2>&1 || true
 
 #### Login screen buttons as little monsters (icon set used only by the login screen)
-chmod 755 /usr/libexec/monster-login-icons /usr/libexec/monster-power-icons
+chmod 755 /usr/libexec/monster-root /usr/libexec/monster-login-icons /usr/libexec/monster-power-icons
 gtk-update-icon-cache -f /usr/share/icons/Monster-Login >/dev/null 2>&1 || true
 gtk-update-icon-cache -f /usr/share/icons/hicolor >/dev/null 2>&1 || true
 systemctl enable monster-login-icons.service
@@ -239,3 +239,8 @@ for f in /etc/xdg/mimeapps.list /usr/share/applications/mimeapps.list; do
 done
 update-desktop-database /usr/share/applications >/dev/null 2>&1 || true
 echo "::notice title=Terminal buttons::$(grep -h monster-help /etc/xdg/mimeapps.list) · Konsole links: $(grep -c EscapedLinks /usr/share/konsole/MonsterGloop.profile 2>/dev/null)"
+
+#### Safety net: Qt refuses half-pixel font sizes and then the whole Monster app won't open.
+if grep -rnE "pixelSize: *[0-9]+\.[0-9]" /usr/share/plasma/plasmoids/org.monsterlinux.* ; then
+  echo "::error title=Monster apps::A font.pixelSize has a decimal value (see above). Qt won't load that window."; exit 1
+fi

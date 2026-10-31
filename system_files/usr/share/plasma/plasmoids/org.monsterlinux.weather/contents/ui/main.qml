@@ -7,6 +7,7 @@ import org.kde.plasma.plasmoid
 import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.components as PC3
 import org.kde.kirigami as Kirigami
+import org.kde.plasma.plasma5support as P5Support
 
 PlasmoidItem {
     id: root
@@ -46,24 +47,48 @@ PlasmoidItem {
     }
 
     // ---------- fetching ----------
-    function get(url, cb, fail) {
-        const x = new XMLHttpRequest()
-        x.onreadystatechange = () => {
-            if (x.readyState !== XMLHttpRequest.DONE) return
-            if (x.status === 200) { try { cb(JSON.parse(x.responseText)) } catch (e) { if (fail) fail() } }
-            else if (fail) fail()
+    // downloads go through curl (more reliable inside the panel than the built-in web requests)
+    property int reqId: 0
+    property var pending: ({})
+    P5Support.DataSource {
+        id: net
+        engine: "executable"
+        connectedSources: []
+        onNewData: (source, data) => {
+            const p = root.pending[source]
+            net.disconnectSource(source)
+            if (!p) return
+            const c = Object.assign({}, root.pending); delete c[source]; root.pending = c
+            if (data["exit code"] === 0) { try { p.cb(JSON.parse(data["stdout"])); return } catch (e) {} }
+            if (p.fail) p.fail()
         }
-        x.open("GET", url); x.send()
+    }
+    function get(url, cb, fail) {
+        reqId++
+        const cmd = "curl -fsSL --max-time 15 -H 'User-Agent: MonsterWeather/1.0' '" + url.replace(/'/g, "%27") + "' #" + reqId
+        const c = Object.assign({}, pending); c[cmd] = { cb: cb, fail: fail }; pending = c
+        net.connectSource(cmd)
+    }
+    // three free "where am I" services, tried in turn
+    function locate(i) {
+        const c = Plasmoid.configuration
+        const svc = [
+            ["https://ipwho.is/?fields=success,city,country_code,latitude,longitude", j => j.success ? [j.latitude, j.longitude, j.city, j.country_code] : null],
+            ["https://ipapi.co/json/", j => j.latitude ? [j.latitude, j.longitude, j.city, j.country_code] : null],
+            ["https://get.geojs.io/v1/ip/geo.json", j => j.latitude ? [parseFloat(j.latitude), parseFloat(j.longitude), j.city || j.region, j.country_code] : null]
+        ]
+        if (i >= svc.length) { status = (c.latitude || c.longitude) ? status : "Couldn't find your town: press Change and type it"; if (c.latitude || c.longitude) load(); return }
+        get(svc[i][0], j => {
+            const r = svc[i][1](j)
+            if (!r || !r[0]) { locate(i + 1); return }
+            c.latitude = r[0]; c.longitude = r[1]; c.place = (r[2] || "Your area") + (r[3] ? ", " + r[3] : ""); place = c.place
+            load()
+        }, () => locate(i + 1))
     }
     function refresh() {
         const c = Plasmoid.configuration
-        if (c.autoLocation || (!c.latitude && !c.longitude)) {
-            get("https://ipwho.is/?fields=success,city,country_code,latitude,longitude", j => {
-                if (!j.success) { status = "Couldn't find your town: pick it below"; return }
-                c.latitude = j.latitude; c.longitude = j.longitude; c.place = j.city + ", " + j.country_code; place = c.place
-                load()
-            }, () => { if (c.latitude || c.longitude) load(); else status = "No internet, or couldn't find your town" })
-        } else load()
+        if (c.autoLocation || (!c.latitude && !c.longitude)) locate(0)
+        else load()
     }
     function load() {
         const c = Plasmoid.configuration

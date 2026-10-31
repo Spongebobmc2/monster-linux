@@ -214,7 +214,7 @@ Rectangle {
                             Image { source: "../images/magic.png"; Layout.preferredWidth: 52; Layout.preferredHeight: 52; fillMode: Image.PreserveAspectFit; smooth: true; mipmap: true }
                             ColumnLayout { spacing: 1
                                 Text { text: "Monster Magic"; font.family: magic.head; font.weight: Font.ExtraBold; font.pixelSize: 20; color: "#13200a" }
-                                Text { text: "One button. Real fixes. Proof."; font.family: magic.body; font.pixelSize: 11.5; color: "#25380f" } }
+                                Text { text: "One button. Real fixes. Proof."; font.family: magic.body; font.pixelSize: 12; color: "#25380f" } }
                         }
                         Rectangle {
                             Layout.fillWidth: true; radius: 14; color: Qt.rgba(1, 1, 1, .55); implicitHeight: scoreCol.implicitHeight + 24
@@ -236,7 +236,7 @@ Rectangle {
                                         Text { anchors.centerIn: parent; text: magic.greenCount; font.family: magic.head; font.weight: Font.ExtraBold; font.pixelSize: 15; color: "#13200a" }
                                     }
                                     ColumnLayout { spacing: 1; Layout.fillWidth: true
-                                        Text { text: magic.greenCount + " of 10 green"; font.family: magic.body; font.pixelSize: 13.5; font.bold: true; color: "#13200a" }
+                                        Text { text: magic.greenCount + " of 10 green"; font.family: magic.body; font.pixelSize: 14; font.bold: true; color: "#13200a" }
                                         Text { text: magic.amberCount ? magic.amberCount + (magic.amberCount === 1 ? " check has" : " checks have") + " things to fix" : "Press Check everything for a full checkup"
                                             font.family: magic.body; font.pixelSize: 11; color: "#2f4515"; wrapMode: Text.Wrap; Layout.fillWidth: true } }
                                 }
@@ -370,7 +370,7 @@ Rectangle {
                     RowLayout {
                         anchors.fill: parent; anchors.margins: 20; spacing: 14
                         QQC2.BusyIndicator { running: magic.busy; implicitWidth: 36; implicitHeight: 36 }
-                        Text { text: magic.busyText; font.family: magic.body; font.pixelSize: 13.5; color: magic.ink; Layout.fillWidth: true; wrapMode: Text.Wrap }
+                        Text { text: magic.busyText; font.family: magic.body; font.pixelSize: 14; color: magic.ink; Layout.fillWidth: true; wrapMode: Text.Wrap }
                     }
                 }
 
@@ -384,7 +384,7 @@ Rectangle {
                 }
                 Text {
                     visible: magic.ran && !magic.busy && magic.proof !== ""
-                    Layout.leftMargin: 28; text: magic.proof; font.family: magic.body; font.pixelSize: 12.5; color: magic.dim
+                    Layout.leftMargin: 28; text: magic.proof; font.family: magic.body; font.pixelSize: 13; color: magic.dim
                 }
 
                 // needs attention
@@ -417,9 +417,9 @@ Rectangle {
                                     }
                                     ColumnLayout {
                                         Layout.fillWidth: true; spacing: 2
-                                        Text { visible: ar.f.src !== ""; text: ar.f.src.toUpperCase(); font.family: magic.body; font.pixelSize: 9.5; font.bold: true; font.letterSpacing: 1.2; color: "#7c8a6c" }
-                                        Text { text: (ar.f.k === "TIP" ? "Recommended: " : "") + ar.f.t; font.family: magic.body; font.pixelSize: 13.5; font.bold: ar.f.k !== "TIP"; color: magic.ink; wrapMode: Text.Wrap; Layout.fillWidth: true }
-                                        Text { visible: !!ar.f.fix; text: ar.f.fix ? ar.f.fix.what : ""; font.family: magic.body; font.pixelSize: 11.5; color: magic.dim; wrapMode: Text.Wrap; Layout.fillWidth: true }
+                                        Text { visible: ar.f.src !== ""; text: ar.f.src.toUpperCase(); font.family: magic.body; font.pixelSize: 10; font.bold: true; font.letterSpacing: 1.2; color: "#7c8a6c" }
+                                        Text { text: (ar.f.k === "TIP" ? "Recommended: " : "") + ar.f.t; font.family: magic.body; font.pixelSize: 14; font.bold: ar.f.k !== "TIP"; color: magic.ink; wrapMode: Text.Wrap; Layout.fillWidth: true }
+                                        Text { visible: !!ar.f.fix; text: ar.f.fix ? ar.f.fix.what : ""; font.family: magic.body; font.pixelSize: 12; color: magic.dim; wrapMode: Text.Wrap; Layout.fillWidth: true }
                                     }
                                     Pill {
                                         visible: !!ar.f.fix
@@ -451,7 +451,7 @@ Rectangle {
                                     Layout.fillWidth: true; Layout.preferredWidth: 1; spacing: 10
                                     Rectangle { Layout.preferredWidth: 20; Layout.preferredHeight: 20; radius: 10; color: magic.good; Layout.alignment: Qt.AlignTop
                                         Text { anchors.centerIn: parent; text: "✓"; color: "white"; font.bold: true; font.pixelSize: 10 } }
-                                    Text { Layout.fillWidth: true; text: modelData.done ? modelData.t + " → fixed" : modelData.t; font.family: magic.body; font.pixelSize: 12.5; color: magic.ink; wrapMode: Text.Wrap }
+                                    Text { Layout.fillWidth: true; text: modelData.done ? modelData.t + " → fixed" : modelData.t; font.family: magic.body; font.pixelSize: 13; color: magic.ink; wrapMode: Text.Wrap }
                                 }
                             }
                         }
@@ -521,7 +521,7 @@ Rectangle {
         property string label: ""
         radius: 10; implicitHeight: 20; implicitWidth: ct.implicitWidth + 16
         color: tone === "red" ? "#fde3dd" : tone === "amber" ? "#fff1d6" : tone === "green" ? "#e5f4e9" : "#f3f6ee"
-        Text { id: ct; anchors.centerIn: parent; text: ch.label; font.family: "Sora"; font.pixelSize: 10.5; font.bold: true
+        Text { id: ct; anchors.centerIn: parent; text: ch.label; font.family: "Sora"; font.pixelSize: 11; font.bold: true
             color: ch.tone === "red" ? "#b23a26" : ch.tone === "amber" ? "#a8690a" : ch.tone === "green" ? "#2f8a4a" : "#9aa58e" }
     }
     component Icon: Rectangle {

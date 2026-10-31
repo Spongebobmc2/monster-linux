@@ -45,8 +45,18 @@ frame > button, frame button {
 frame > button:hover { background-color: #f4fae8; }
 frame > button:active { background-color: #e3f3c4; }
 
-/* Buttons in dialogs */
-button { border-radius: 99px; }
+/* Buttons in dialogs: light pills with dark text (never dark-on-dark) */
+button {
+  border-radius: 99px; background-color: #ffffff; background-image: none;
+  color: #1b2610; border: 1px solid #cfe3a8; box-shadow: none;
+  min-height: 34px; padding: 4px 18px; font-weight: 600;
+}
+button label { color: #1b2610; }
+button:hover { background-color: #f1f8e2; }
+button:active { background-color: #e3f3c4; }
+button:disabled, button:disabled label { color: #9aa58e; background-color: #f4f6f0; }
+button.destructive-action { background-color: #c4452f; border-color: #c4452f; color: #ffffff; }
+button.destructive-action label { color: #ffffff; }
 button.suggested-action { background-color: #3f7a0e; background-image: none; color: #ffffff; border-color: #3f7a0e; font-weight: 700; }
 button.suggested-action label { color: #ffffff; }
 .highlighted-action { border: 2px solid #8cc22a; border-radius: 16px; }

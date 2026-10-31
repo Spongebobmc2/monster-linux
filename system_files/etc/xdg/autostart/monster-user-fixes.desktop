@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Monster Linux repairs
+Comment=Small one-time repairs after updates
+Exec=/usr/libexec/monster-user-fixes
+NoDisplay=true
+X-KDE-autostart-phase=1

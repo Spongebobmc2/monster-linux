@@ -44,13 +44,8 @@ def _monster_init(self, *a, **k):
 
         head = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=14)
         head.add_css_class("monster-header")
-        pic = Gtk.Picture.new_for_filename(os.path.join(DIR, "gloop.png"))
-        pic.set_size_request(50, 52)
-        pic.set_can_shrink(True)
-        try:
-            pic.set_content_fit(Gtk.ContentFit.CONTAIN)
-        except Exception:
-            pass
+        pic = Gtk.Image.new_from_file(os.path.join(DIR, "gloop.png"))
+        pic.set_pixel_size(60)           # keeps Gloop small in the header
         pic.set_valign(Gtk.Align.CENTER)
         head.append(pic)
         words = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)

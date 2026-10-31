@@ -1,0 +1,87 @@
+#!/usr/bin/bash
+# Monster Linux system card: shown at the top right when you open a terminal
+# (Konsole, or the terminal panel in Dolphin with F4). It replaces Bazzite's welcome banner.
+# Run "monster-hello" any time. Turn it on or off with:  ujust toggle-user-motd
+CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/monster-hello"
+BOOT=$(cat /proc/sys/kernel/random/boot_id 2>/dev/null)
+
+collect() {
+  r() { [ -r "/sys/class/dmi/id/$1" ] || return 0; tr -d '\0' < "/sys/class/dmi/id/$1" 2>/dev/null | sed 's/[[:space:]]*$//'; }
+  vendor=$(r sys_vendor); product=$(r product_name); board=$(r board_name); bios=$(r bios_version)
+  case "$vendor" in ASUSTeK*|ASUS*) vendor=ASUS;; "Micro-Star"*) vendor=MSI;; "Gigabyte"*|"GIGABYTE"*) vendor=Gigabyte;; "Dell"*) vendor=Dell;; "LENOVO") vendor=Lenovo;; "HP"|"Hewlett"*) vendor=HP;; "To Be Filled"*|"System manufacturer"|"Default string") vendor="";; esac
+  case "$product" in "To Be Filled"*|"System Product Name"|"Default string") product="";; esac
+  product=$(printf '%s' "$product" | sed -E 's/\.[0-9]+$//')        # "ROG G22CH.414" -> "ROG G22CH"
+  pc=$(printf '%s %s' "$vendor" "$product" | sed 's/^ *//')
+  cpu=$(sed -n 's/^model name[[:space:]]*: //p' /proc/cpuinfo | head -n1 | sed -E 's/\((R|TM)\)//g; s/[0-9]+th Gen //; s/ CPU//; s/ @.*//; s/ +Processor//; s/  +/ /g')
+  thr=$(nproc 2>/dev/null)
+  kb=$(sed -n 's/^MemTotal: *\([0-9]*\).*/\1/p' /proc/meminfo)
+  ram=$(( (kb + 2*1024*1024 - 1) / (2*1024*1024) * 2 ))
+  gpu=""
+  if command -v nvidia-smi >/dev/null; then
+    gpu=$(nvidia-smi --query-gpu=name,memory.total --format=csv,noheader,nounits 2>/dev/null | head -n1 | awk -F', ' '{ printf "%s · %d GB", $1, ($2+512)/1024 }')
+  fi
+  if [ -z "$gpu" ]; then
+    gpu=$(lspci -mm 2>/dev/null | grep -E '"(VGA compatible controller|3D controller|Display controller)"' | head -n1 | awk -F'"' '{print $4" "$6}' | sed -E 's/Advanced Micro Devices, Inc\. \[AMD\/ATI\]/AMD/; s/NVIDIA Corporation/NVIDIA/; s/Intel Corporation/Intel/; s/.*\[(.*)\]/\1/')
+  fi
+  . /usr/lib/os-release
+  sys="${NAME:-Linux} ${VERSION%% *}"
+  base=""
+  [ -f /usr/share/ublue-os/image-info.json ] && base=$(sed -n 's/.*"image-name": *"\([^"]*\)".*/\1/p' /usr/share/ublue-os/image-info.json | head -n1)
+  kern=$(uname -r | sed 's/\.x86_64$//')
+  {
+    echo "BOOT=$BOOT"
+    printf 'PC=%q\nBOARD=%q\nBIOS=%q\nCPU=%q\nTHR=%q\nRAM=%q\nGPU=%q\nSYS=%q\nBASE=%q\nKERN=%q\n' "$pc" "$board" "$bios" "$cpu" "$thr" "$ram" "$gpu" "$sys" "$base" "$kern"
+  } > "$CACHE.tmp" && mv "$CACHE.tmp" "$CACHE"
+}
+
+mkdir -p "${CACHE%/*}"
+if [ ! -f "$CACHE" ] || ! grep -qx "BOOT=$BOOT" "$CACHE" || [ "${1:-}" = "--refresh" ]; then collect; fi
+. "$CACHE"
+
+# ---- draw: one small box per item, two per row, at the top right ----
+F=$'\e[38;2;104;150;44m'; L=$'\e[38;2;168;224;58m'; K=$'\e[38;2;138;152;120m'; W=$'\e[38;2;232;238;224m'; Z=$'\e[0m'
+short() { printf '%s' "$1" | sed -E 's/NVIDIA GeForce /NVIDIA /; s/AMD Radeon /Radeon /; s/Intel Core /Core /'; }
+items=()
+[ -n "$PC" ]    && items+=("PC|$PC")
+[ -n "$BOARD" ] && items+=("Board|$BOARD${BIOS:+ · BIOS $BIOS}")
+[ -n "$CPU" ]   && items+=("CPU|$(short "$CPU")${THR:+ · $THR threads}")
+[ -n "$GPU" ]   && items+=("Graphics|$(short "$GPU")")
+[ -n "$RAM" ]   && items+=("Memory|$RAM GB")
+items+=("System|$SYS")
+[ -n "$BASE" ]  && items+=("Base|$BASE")
+items+=("Kernel|${KERN%.fc*}")
+
+cols=$(tput cols 2>/dev/null || echo 80)
+# widest value in each column decides that column's box width
+w0=0; w1=0
+for i in "${!items[@]}"; do v=${items[$i]#*|}; k=${items[$i]%%|*}; n=$(( ${#v} > ${#k}+1 ? ${#v} : ${#k}+1 ))
+  if (( i % 2 == 0 )); then (( n > w0 )) && w0=$n; else (( n > w1 )) && w1=$n; fi; done
+per=2; total=$(( w0 + 4 + 1 + w1 + 4 ))
+if (( total + 2 > cols )); then per=1; (( w1 > w0 )) && w0=$w1; total=$(( w0 + 4 )); fi
+pad=$(( cols - total - 1 )); (( pad < 0 )) && pad=0
+sp=$(printf '%*s' "$pad" '')
+rep() { local s=""; for ((j=0;j<$2;j++)); do s+="$1"; done; printf '%s' "$s"; }
+top() { printf '%s' "$F╭─ $L$1$F $(rep ─ $(( $2 - ${#1} - 1 )))╮$Z"; }
+mid() { printf '%s' "$F│$Z $W$1$(printf '%*s' $(( $2 - ${#1} )) '') $F│$Z"; }
+bot() { printf "%s" "$F╰$(rep ─ $(( $1 + 2 )))╯$Z"; }
+for ((i=0;i<${#items[@]};i+=per)); do
+  k0=${items[$i]%%|*}; v0=${items[$i]#*|}
+  if (( per == 2 )) && (( i+1 < ${#items[@]} )); then
+    k1=${items[$((i+1))]%%|*}; v1=${items[$((i+1))]#*|}
+    printf '%s%s %s\n' "$sp" "$(top "$k0" $w0)" "$(top "$k1" $w1)"
+    printf '%s%s %s\n' "$sp" "$(mid "$v0" $w0)" "$(mid "$v1" $w1)"
+    printf '%s%s %s\n' "$sp" "$(bot $w0)" "$(bot $w1)"
+  else
+    printf '%s%s\n' "$sp" "$(top "$k0" $w0)"; printf '%s%s\n' "$sp" "$(mid "$v0" $w0)"; printf '%s%s\n' "$sp" "$(bot $w0)"
+  fi
+done
+# full-width box: how to update and upgrade everything
+U=$'\e[38;2;230;255;107m'
+uw=$(( total - 4 ))
+ucmd="ujust update"; utxt="updates the system, apps and drivers"
+if (( uw >= ${#ucmd} + 3 + ${#utxt} )); then uline="$ucmd   $K$utxt"; ulen=$(( ${#ucmd} + 3 + ${#utxt} )); else uline="$ucmd"; ulen=${#ucmd}; fi
+printf '%s%s\n' "$sp" "$(top "Update & upgrade" $uw)"
+printf '%s%s %s%s%s%s %s\n' "$sp" "$F│$Z" "$U" "$uline" "$Z" "$(printf '%*s' $(( uw - ulen )) '')" "$F│$Z"
+printf '%s%s\n' "$sp" "$(bot $uw)"
+tip="ujust --choose  all commands  ·  ujust toggle-user-motd  hide this"
+if (( ${#tip} + 2 <= cols )); then tp=$(( pad + total - ${#tip} )); (( tp < 0 )) && tp=0; printf '%*s%s%s%s\n' "$tp" '' "$K" "$tip" "$Z"; fi

@@ -253,3 +253,16 @@ echo "::notice title=Terminal buttons::$(grep -h monster-help /etc/xdg/mimeapps.
 if grep -rnE "pixelSize: *[0-9]+\.[0-9]" /usr/share/plasma/plasmoids/org.monsterlinux.* ; then
   echo "::error title=Monster apps::A font.pixelSize has a decimal value (see above). Qt won't load that window."; exit 1
 fi
+
+#### Ollama (local AI), newest release from ollama.com, as a background service on 127.0.0.1:11434
+# Models are NOT in the image (several GB each): get one with e.g.  ollama pull qwen3:8b
+rm -rf /usr/lib/ollama
+if curl -fsSL --retry 3 https://ollama.com/download/ollama-linux-amd64.tar.zst -o /tmp/ollama.tar.zst \
+   && tar --zstd -xf /tmp/ollama.tar.zst -C /usr && [ -x /usr/bin/ollama ]; then
+  rm -f /tmp/ollama.tar.zst
+  systemctl enable ollama.service
+  echo "::notice title=Ollama::$(/usr/bin/ollama --version 2>&1 | tail -1) · $(du -sh /usr/lib/ollama | cut -f1) of libraries"
+else
+  rm -f /tmp/ollama.tar.zst
+  echo "::warning title=Ollama::Download or unpack failed; Ollama not included"
+fi

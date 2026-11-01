@@ -260,7 +260,7 @@ rm -rf /usr/lib/ollama
 if curl -fsSL --retry 3 https://ollama.com/download/ollama-linux-amd64.tar.zst -o /tmp/ollama.tar.zst \
    && tar --zstd -xf /tmp/ollama.tar.zst -C /usr && [ -x /usr/bin/ollama ]; then
   rm -f /tmp/ollama.tar.zst
-  systemctl enable ollama.service
+  systemctl enable ollama.service monster-ai-model.service   # pulls qwen3:8b once, in the background
   echo "::notice title=Ollama::$(/usr/bin/ollama --version 2>&1 | tail -1) · $(du -sh /usr/lib/ollama | cut -f1) of libraries"
 else
   rm -f /tmp/ollama.tar.zst

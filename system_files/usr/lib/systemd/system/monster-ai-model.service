@@ -1,0 +1,24 @@
+[Unit]
+Description=Monster Linux: download the Qwen3 8B AI model once (about 5 GB)
+After=ollama.service network-online.target
+Wants=network-online.target
+Requires=ollama.service
+ConditionPathExists=!/var/lib/ollama/.monster-qwen3-8b-ready
+
+[Service]
+Type=oneshot
+User=ollama
+Group=ollama
+Environment=OLLAMA_HOST=127.0.0.1:11434
+Environment=HOME=/var/lib/ollama
+Nice=15
+IOSchedulingClass=idle
+# wait for the AI service, then download; a failed download (no internet) tries again in 10 minutes
+ExecStartPre=/usr/bin/bash -c 'for i in $(seq 1 60); do /usr/bin/ollama list >/dev/null 2>&1 && exit 0; sleep 2; done; exit 1'
+ExecStart=/usr/bin/ollama pull qwen3:8b
+ExecStartPost=/usr/bin/touch /var/lib/ollama/.monster-qwen3-8b-ready
+Restart=on-failure
+RestartSec=10min
+
+[Install]
+WantedBy=multi-user.target
